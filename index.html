@@ -440,11 +440,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementB
 async function loadData(){
   try{
     const isAdmin=currentProfile?.role==='admin';
-    let q=db.from('tasks').select('*, profiles(full_name)').order('created_at',{ascending:false});
+    let q=db.from('tasks').select('*').order('created_at',{ascending:false});
     if(!isAdmin) q=q.or(`created_by.eq.${currentUser.id},assigned_to.eq.${currentUser.id}`);
     const{data:tData,error:tErr}=await q;
     if(tErr)throw tErr;
-    allTasks=tData||[];
+    // جيب الـ profiles منفصلة وادمجهم
+    const{data:allProfiles}=await db.from('profiles').select('id,full_name,email');
+    const profileMap={};(allProfiles||[]).forEach(p=>{profileMap[p.id]=p;});
+    allTasks=(tData||[]).map(t=>({...t,profiles:profileMap[t.assigned_to]||profileMap[t.created_by]||null}));
     tasks=allTasks;
     if(isAdmin){
       const{data:uData}=await db.from('profiles').select('*').order('full_name');
