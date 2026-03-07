@@ -420,6 +420,24 @@ function showApp(){
   document.getElementById('fAssignRow').style.display=isAdmin?'':'none';
   calY=NOW.getFullYear();calM=NOW.getMonth();selDate=todayStr;
   loadData();
+  // تحديث تلقائي كل دقيقة في الخلفية بدون أي loading
+  setInterval(()=>silentRefresh(),60000);
+}
+
+async function silentRefresh(){
+  try{
+    const isAdmin=currentProfile?.role==='admin';
+    let q=db.from('tasks').select('*').order('created_at',{ascending:false});
+    if(!isAdmin) q=q.or(`created_by.eq.${currentUser.id},assigned_to.eq.${currentUser.id}`);
+    const{data:tData}=await q;
+    if(!tData)return;
+    const{data:allProfiles}=await db.from('profiles').select('id,full_name,email');
+    const profileMap={};(allProfiles||[]).forEach(p=>{profileMap[p.id]=p;});
+    allTasks=(tData||[]).map(t=>({...t,profiles:profileMap[t.assigned_to]||profileMap[t.created_by]||null}));
+    tasks=allTasks;
+    render();renderCal();if(selDate)updateCalTasks(selDate);
+    renderRem();renderAdminView();
+  }catch(e){/* silent */}
 }
 
 // ── AUTH ──
@@ -528,23 +546,58 @@ async function saveTask(){
       if(error)throw error;
       showToast('✅ تم الحفظ',curSec[0]);
     }
-    closeModal();await loadData();
+    closeModal();
+    // تحديث local — بدون ما نكلم Supabase تاني
+    if(editId){
+      const idx=allTasks.findIndex(x=>x.id===editId);
+      if(idx>-1) allTasks[idx]={...allTasks[idx],...payload};
+    } else {
+      // للـ insert محتاجين نجيب الـ ID الجديد من الـ server
+      await loadData();
+      return;
+    }
+    tasks=allTasks;
+    render();renderCal();if(selDate)updateCalTasks(selDate);
+    renderRem();renderAdminView();
   }catch(e){showToast('❌ '+e.message,'e');}
 }
 
 // ── TOGGLE / DELETE ──
 async function toggleTask(id){
   const t=allTasks.find(x=>x.id===id);if(!t)return;
-  const{error}=await db.from('tasks').update({completed:!t.completed,completed_at:!t.completed?new Date().toISOString():null}).eq('id',id);
-  if(!error)await loadData();
+  // Optimistic update — UI بيتحدث فوراً
+  const newVal=!t.completed;
+  t.completed=newVal;
+  t.completed_at=newVal?new Date().toISOString():null;
+  tasks=allTasks;
+  render();renderCal();if(selDate)updateCalTasks(selDate);
+  renderRem();renderAdminView();
+  // ثم بعدين نعمل DB call في الخلفية
+  const{error}=await db.from('tasks').update({completed:newVal,completed_at:t.completed_at}).eq('id',id);
+  if(error){
+    // لو فيه error نرجع للقيمة الأصلية
+    t.completed=!newVal;t.completed_at=null;
+    tasks=allTasks;render();
+    showToast('❌ خطأ: '+error.message,'e');
+  }
 }
 async function delTask(id){
   const t=allTasks.find(x=>x.id===id);if(!t)return;
   const isAdmin=currentProfile?.role==='admin';
   if(!isAdmin&&t.is_admin_assigned){showToast('❌ لا يمكن حذف مهام الأدمن','e');return;}
   if(!confirm('حذف هذه المهمة؟'))return;
+  // Optimistic — شيله من الـ UI فوراً
+  allTasks=allTasks.filter(x=>x.id!==id);
+  tasks=allTasks;
+  render();renderCal();if(selDate)updateCalTasks(selDate);
+  renderAdminView();
+  showToast('🗑️ تم الحذف','o');
+  // DB في الخلفية
   const{error}=await db.from('tasks').delete().eq('id',id);
-  if(!error){showToast('🗑️ تم الحذف','o');await loadData();}
+  if(error){
+    showToast('❌ خطأ في الحذف — جاري إعادة التحميل','e');
+    await loadData(); // fallback لو فشل
+  }
 }
 
 // ── RENDER ──
