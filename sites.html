@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام المواقع والزيارات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#07090f;--s:#0f1623;--s2:#161e2e;--s3:#1c2840;
+  --ops:#00d4aa;--og:rgba(0,212,170,.12);
+  --qual:#f59e0b;--qg:rgba(245,158,11,.12);
+  --blue:#3b82f6;--blg:rgba(59,130,246,.12);
+  --red:#fc5c7d;--rdg:rgba(252,92,125,.12);
+  --purple:#818cf8;--pg:rgba(129,140,248,.12);
+  --text:#e2e8f0;--muted:#4a5568;--dim:#718096;
+  --border:rgba(255,255,255,.06);--r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+
+/* LOADING */
+.load-ov{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .35s}
+.load-ov.hide{opacity:0;pointer-events:none}
+.spinner{width:40px;height:40px;border:3px solid var(--s3);border-top-color:var(--ops);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(7,9,15,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 22px;display:flex;align-items:center;justify-content:space-between;height:58px}
+.logo{font-size:1.1rem;font-weight:900;background:linear-gradient(135deg,var(--ops),#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.back-btn{padding:5px 14px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--dim);font-family:'Cairo',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .18s;text-decoration:none;display:flex;align-items:center;gap:5px}
+.back-btn:hover{background:var(--s3);color:var(--text)}
+
+/* TABS */
+.tabs-bar{background:transparent;border-bottom:1px solid var(--border);padding:0 22px;display:flex;gap:0;position:relative;z-index:1}
+.tab{padding:10px 18px;border:none;background:transparent;color:var(--muted);font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s}
+.tab:hover{color:var(--text)}.tab.act{color:var(--ops);border-bottom-color:var(--ops)}
+
+/* MAIN */
+main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
+.view{display:none}.view.show{display:block}
+
+/* SEARCH + ADD BAR */
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--s);border:1px solid var(--border);border-radius:9px;padding:7px 13px;flex:1;max-width:340px}
+.search-box input{background:transparent;border:none;outline:none;color:var(--text);font-family:'Cairo',sans-serif;font-size:.82rem;width:100%}
+.search-box input::placeholder{color:var(--muted)}
+.btn{padding:7px 16px;border-radius:8px;border:none;font-family:'Cairo',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+.btn-ops{background:var(--ops);color:#07090f}.btn-ops:hover{filter:brightness(1.1)}
+.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{filter:brightness(1.1)}
+.btn-ghost{background:var(--s2);color:var(--dim);border:1px solid var(--border)}.btn-ghost:hover{background:var(--s3);color:var(--text)}
+.btn-red{background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.2)}.btn-red:hover{background:rgba(252,92,125,.2)}
+.btn-yellow{background:var(--qg);color:var(--qual);border:1px solid rgba(245,158,11,.2)}.btn-yellow:hover{background:rgba(245,158,11,.2)}
+.btn-purple{background:var(--pg);color:var(--purple);border:1px solid rgba(129,140,248,.2)}.btn-purple:hover{background:rgba(129,140,248,.25)}
+.btn-sm{padding:4px 10px;font-size:.68rem;border-radius:6px}
+
+/* CARDS GRID */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+
+/* SITE CARD */
+.site-card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:all .2s;cursor:pointer}
+.site-card:hover{border-color:rgba(0,212,170,.25);transform:translateY(-2px)}
+.site-card-top{padding:14px 15px;border-bottom:1px solid var(--border)}
+.site-name{font-size:.9rem;font-weight:800;margin-bottom:3px}
+.site-region{font-size:.67rem;color:var(--muted);display:flex;align-items:center;gap:4px}
+.site-card-mid{padding:11px 15px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-bottom:1px solid var(--border)}
+.site-info-item{font-size:.68rem;color:var(--muted)}
+.site-info-val{font-size:.76rem;font-weight:700;color:var(--text);margin-top:1px}
+.site-card-bot{padding:10px 15px;display:flex;align-items:center;justify-content:space-between}
+.visit-progress{flex:1;margin-left:12px}
+.vp-label{display:flex;justify-content:space-between;font-size:.63rem;color:var(--muted);margin-bottom:4px}
+.vp-bar{height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.vp-fill{height:100%;border-radius:2px;transition:width .5s}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sd-active{background:var(--ops);box-shadow:0 0 5px var(--ops)}
+.sd-inactive{background:var(--muted)}
+
+/* ENGINEER CARD */
+.eng-card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);padding:15px;display:flex;align-items:flex-start;gap:13px;transition:all .2s}
+.eng-card:hover{border-color:rgba(59,130,246,.25)}
+.eng-avatar{width:44px;height:44px;border-radius:50%;background:var(--blg);border:2px solid rgba(59,130,246,.25);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:var(--blue);flex-shrink:0}
+.eng-info{flex:1}
+.eng-name{font-size:.88rem;font-weight:800;margin-bottom:4px}
+.eng-detail{font-size:.68rem;color:var(--muted);display:flex;align-items:center;gap:5px;margin-top:2px}
+.eng-stats{display:flex;gap:10px;margin-top:8px}
+.eng-stat{text-align:center}
+.eng-stat-val{font-size:.95rem;font-weight:800}
+.eng-stat-lbl{font-size:.58rem;color:var(--muted)}
+.stars{display:flex;gap:2px}
+.star{font-size:.85rem;color:var(--muted);cursor:pointer;transition:color .1s}
+.star.on{color:#f59e0b}
+
+/* VISIT CARD */
+.visit-card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;transition:all .18s}
+.visit-card:hover{border-color:rgba(255,255,255,.1);background:var(--s2)}
+.visit-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px}
+.visit-site{font-size:.85rem;font-weight:800}
+.visit-date{font-size:.72rem;color:var(--ops);font-weight:700}
+.visit-status{padding:2px 9px;border-radius:5px;font-size:.62rem;font-weight:700;white-space:nowrap}
+.vs-sched{background:var(--blg);color:#60a5fa}
+.vs-done{background:var(--og);color:var(--ops)}
+.vs-post{background:var(--qg);color:var(--qual)}
+.vs-cancel{background:var(--rdg);color:var(--red)}
+.visit-engs{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}
+.eng-chip{background:var(--blg);color:#93c5fd;border-radius:5px;padding:2px 8px;font-size:.62rem;font-weight:600}
+.visit-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:.76rem}
+.tbl th{text-align:right;padding:8px 10px;color:var(--muted);font-weight:700;font-size:.65rem;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.tbl td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.025);color:var(--dim)}
+.tbl tr:hover td{background:var(--s2);color:var(--text)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.82);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--s);border:1px solid rgba(255,255,255,.09);border-radius:18px;width:560px;max-width:100%;padding:24px;position:relative;animation:mup .22s ease;max-height:90vh;overflow-y:auto}
+@keyframes mup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.modal-wide{width:720px}
+.mcls{position:absolute;top:12px;left:12px;width:27px;height:27px;border-radius:6px;background:var(--s2);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:.82rem;display:flex;align-items:center;justify-content:center}
+.mcls:hover{color:var(--text)}.mtitle{font-size:.98rem;font-weight:800;margin-bottom:16px;padding-left:30px}
+.fr{margin-bottom:12px}.flbl{font-size:.71rem;color:var(--dim);margin-bottom:4px;display:block;font-weight:700}
+.finput,.fsel,.ftxt{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-family:'Cairo',sans-serif;font-size:.82rem;outline:none;transition:border-color .2s}
+.finput:focus,.fsel:focus,.ftxt:focus{border-color:rgba(255,255,255,.18)}
+.fsel option{background:var(--s2)}.ftxt{resize:vertical;min-height:70px}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.sbtn{width:100%;padding:10px;border-radius:9px;border:none;font-family:'Cairo',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;transition:all .2s;margin-top:5px}
+.sbtn-ops{background:var(--ops);color:#07090f}.sbtn-ops:hover{filter:brightness(1.1)}
+.sbtn-blue{background:var(--blue);color:#fff}.sbtn-blue:hover{filter:brightness(1.1)}
+
+/* DETAIL PANEL */
+.detail-panel{background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.dp-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.dp-title{font-size:1rem;font-weight:800}
+.dp-body{padding:16px 18px}
+.dp-section{margin-bottom:20px}
+.dp-section-title{font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.info-item{background:var(--s2);border-radius:8px;padding:10px 13px}
+.info-lbl{font-size:.62rem;color:var(--muted);margin-bottom:3px}
+.info-val{font-size:.82rem;font-weight:700}
+
+/* FOLLOWUP */
+.followup-item{background:var(--s2);border-radius:8px;padding:10px 13px;margin-bottom:7px;border-right:3px solid var(--ops)}
+.fu-date{font-size:.62rem;color:var(--muted);margin-bottom:3px}
+.fu-text{font-size:.78rem;line-height:1.5}
+
+/* PHOTO UPLOAD */
+.photo-upload-area{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
+.photo-upload-area:hover{border-color:var(--ops)}
+.photo-upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:10px}
+.photo-thumb{aspect-ratio:1;border-radius:8px;overflow:hidden;position:relative;background:var(--s2)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-del{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;border:none;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center}
+
+/* SCORE CARD */
+.score-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--s2);border-radius:8px;margin-bottom:6px}
+.score-name{font-size:.8rem;font-weight:700}
+.score-visits{font-size:.65rem;color:var(--muted)}
+.score-stars-avg{display:flex;align-items:center;gap:5px}
+.avg-num{font-size:1rem;font-weight:900;color:var(--qual)}
+
+/* BADGE */
+.badge{padding:2px 8px;border-radius:4px;font-size:.6rem;font-weight:700;display:inline-block}
+.b-active{background:var(--og);color:var(--ops)}.b-inactive{background:rgba(74,85,104,.2);color:var(--muted)}
+.b-done{background:var(--og);color:var(--ops)}.b-sched{background:var(--blg);color:#60a5fa}
+.b-post{background:var(--qg);color:var(--qual)}.b-cancel{background:var(--rdg);color:var(--red)}
+
+/* TOAST */
+.toast{position:fixed;bottom:16px;right:16px;z-index:9999;background:var(--s);border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-size:.76rem;font-weight:600;transform:translateY(50px);opacity:0;transition:all .26s;box-shadow:0 7px 22px rgba(0,0,0,.55);display:flex;align-items:center;gap:6px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.t-ok{border-color:var(--ops)}.toast.t-err{border-color:var(--red)}.toast.t-info{border-color:var(--blue)}
+
+/* ENGINEER SELECTOR */
+.eng-selector{display:flex;flex-wrap:wrap;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px}
+.eng-toggle{padding:4px 11px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Cairo',sans-serif;font-size:.7rem;cursor:pointer;transition:all .15s}
+.eng-toggle.sel{background:var(--blg);color:#93c5fd;border-color:rgba(59,130,246,.3)}
+
+/* STAT CARDS */
+.stat-mini{background:var(--s);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;display:flex;align-items:center;gap:11px}
+.sm-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.sm-val{font-size:1.3rem;font-weight:900;line-height:1}
+.sm-lbl{font-size:.62rem;color:var(--muted);margin-top:1px}
+
+/* EMPTY */
+.empty{padding:32px;text-align:center;color:var(--muted);font-size:.78rem}
+.empty-icon{font-size:2rem;opacity:.28;margin-bottom:8px}
+
+@media(max-width:768px){.cards-grid{grid-template-columns:1fr}.fr2,.fr3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="load-ov" id="loadOv"><div class="spinner"></div><div style="font-size:.78rem;color:var(--muted)">جاري التحميل...</div></div>
+
+<header>
+  <div class="logo">🏢 نظام المواقع والزيارات</div>
+  <div class="hdr-r">
+    <a href="index.html" class="back-btn">← الداش بورد</a>
+  </div>
+</header>
+
+<div class="tabs-bar">
+  <button class="tab act" onclick="switchTab('sites',this)">🏢 المواقع</button>
+  <button class="tab" onclick="switchTab('visits',this)">📋 الزيارات</button>
+  <button class="tab" onclick="switchTab('engineers',this)">👷 المهندسين</button>
+  <button class="tab" onclick="switchTab('scores',this)">⭐ السكور كارد</button>
+  <button class="tab" onclick="switchTab('schedule',this)">📅 الجداول</button>
+</div>
+
+<main>
+
+<!-- ══ SITES TAB ══ -->
+<div class="view show" id="view-sites">
+  <div class="top-bar">
+    <div class="search-box">🔍 <input type="text" placeholder="ابحث عن موقع..." id="siteSearch" oninput="filterSites()"></div>
+    <button class="btn btn-ops" onclick="openSiteModal()">+ إضافة موقع</button>
+  </div>
+  <div class="cards-grid" id="sitesGrid"></div>
+</div>
+
+<!-- ══ VISITS TAB ══ -->
+<div class="view" id="view-visits">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px">
+    <div class="stat-mini"><div class="sm-icon" style="background:var(--blg)">📋</div><div><div class="sm-val" style="color:var(--blue)" id="vstTotal">0</div><div class="sm-lbl">إجمالي الزيارات</div></div></div>
+    <div class="stat-mini"><div class="sm-icon" style="background:var(--og)">✅</div><div><div class="sm-val" style="color:var(--ops)" id="vstDone">0</div><div class="sm-lbl">مكتملة</div></div></div>
+    <div class="stat-mini"><div class="sm-icon" style="background:var(--qg)">⏰</div><div><div class="sm-val" style="color:var(--qual)" id="vstPost">0</div><div class="sm-lbl">مؤجلة</div></div></div>
+    <div class="stat-mini"><div class="sm-icon" style="background:var(--rdg)">❌</div><div><div class="sm-val" style="color:var(--red)" id="vstCancel">0</div><div class="sm-lbl">ملغية</div></div></div>
+  </div>
+  <div class="top-bar">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm act-filter" onclick="filterVisits('all',this)">الكل</button>
+      <button class="btn btn-ghost btn-sm" onclick="filterVisits('scheduled',this)">مجدولة</button>
+      <button class="btn btn-ghost btn-sm" onclick="filterVisits('completed',this)">مكتملة</button>
+      <button class="btn btn-ghost btn-sm" onclick="filterVisits('postponed',this)">مؤجلة</button>
+      <button class="btn btn-ghost btn-sm" onclick="filterVisits('cancelled',this)">ملغية</button>
+    </div>
+    <button class="btn btn-blue" onclick="openVisitModal()">+ إضافة زيارة</button>
+  </div>
+  <div id="visitsList" style="display:flex;flex-direction:column;gap:8px"></div>
+</div>
+
+<!-- ══ ENGINEERS TAB ══ -->
+<div class="view" id="view-engineers">
+  <div class="top-bar">
+    <div class="search-box">🔍 <input type="text" placeholder="ابحث عن مهندس..." id="engSearch" oninput="filterEngineers()"></div>
+    <button class="btn btn-blue" onclick="openEngModal()">+ إضافة مهندس</button>
+  </div>
+  <div class="cards-grid" id="engineersGrid"></div>
+</div>
+
+<!-- ══ SCORE CARD TAB ══ -->
+<div class="view" id="view-scores">
+  <div class="detail-panel">
+    <div class="dp-header"><div class="dp-title">⭐ سكور كارد المهندسين</div></div>
+    <div class="dp-body">
+      <div id="scoresList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCHEDULE TAB ══ -->
+<div class="view" id="view-schedule">
+  <div class="top-bar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <select class="finput" id="schedMonth" style="width:auto" onchange="renderSchedule()">
+        <option value="0">يناير</option><option value="1">فبراير</option><option value="2">مارس</option>
+        <option value="3">أبريل</option><option value="4">مايو</option><option value="5">يونيو</option>
+        <option value="6">يوليو</option><option value="7">أغسطس</option><option value="8">سبتمبر</option>
+        <option value="9">أكتوبر</option><option value="10">نوفمبر</option><option value="11">ديسمبر</option>
+      </select>
+      <select class="finput" id="schedYear" style="width:auto" onchange="renderSchedule()"></select>
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-ghost" onclick="exportScheduleExcel()">📥 Excel</button>
+      <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+    </div>
+  </div>
+  <div class="detail-panel">
+    <div class="dp-header"><div class="dp-title" id="schedTitle">جدول الزيارات</div></div>
+    <div class="tbl-wrap" style="padding:12px">
+      <table class="tbl" id="schedTable">
+        <thead><tr id="schedHead"></tr></thead>
+        <tbody id="schedBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- SITE DETAIL PANEL (full screen overlay) -->
+<div class="overlay" id="siteDetailOverlay">
+  <div class="modal modal-wide">
+    <button class="mcls" onclick="closeSiteDetail()">✕</button>
+    <div id="siteDetailContent"></div>
+  </div>
+</div>
+
+<!-- SITE MODAL -->
+<div class="overlay" id="siteOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeSiteModal()">✕</button>
+    <div class="mtitle" id="siteModalTitle">🏢 إضافة موقع جديد</div>
+    <div class="fr2">
+      <div class="fr" style="margin:0"><label class="flbl">اسم الموقع *</label><input class="finput" id="sName" placeholder="اسم الموقع"></div>
+      <div class="fr" style="margin:0"><label class="flbl">المنطقة</label><input class="finput" id="sRegion" placeholder="القاهرة / الجيزة..."></div>
+    </div>
+    <div class="fr"><label class="flbl">العنوان</label><input class="finput" id="sAddress" placeholder="عنوان تفصيلي"></div>
+    <div class="fr2" style="margin-top:12px">
+      <div class="fr" style="margin:0"><label class="flbl">اسم المسؤول / العميل</label><input class="finput" id="sClient" placeholder="اسم العميل"></div>
+      <div class="fr" style="margin:0"><label class="flbl">رقم الهاتف</label><input class="finput" id="sPhone" placeholder="01xxxxxxxxx"></div>
+    </div>
+    <div class="fr"><label class="flbl">الإيميل</label><input class="finput" id="sEmail" type="email" placeholder="client@email.com"></div>
+    <div class="fr2" style="margin-top:12px">
+      <div class="fr" style="margin:0"><label class="flbl">عدد الزيارات المتفق عليها</label><input class="finput" id="sAgreed" type="number" min="0" value="12"></div>
+      <div class="fr" style="margin:0"><label class="flbl">تكرار الزيارة</label>
+        <select class="fsel" id="sFreq">
+          <option value="monthly">شهري</option><option value="weekly">أسبوعي</option>
+          <option value="quarterly">ربع سنوي</option><option value="custom">مخصص</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr2" style="margin-top:12px">
+      <div class="fr" style="margin:0"><label class="flbl">بداية العقد</label><input class="finput" id="sStart" type="date"></div>
+      <div class="fr" style="margin:0"><label class="flbl">نهاية العقد</label><input class="finput" id="sEnd" type="date"></div>
+    </div>
+    <div class="fr"><label class="flbl">ملاحظات</label><textarea class="ftxt" id="sNotes" placeholder="أي ملاحظات..."></textarea></div>
+    <button class="sbtn sbtn-ops" onclick="saveSite()">💾 حفظ الموقع</button>
+  </div>
+</div>
+
+<!-- VISIT MODAL -->
+<div class="overlay" id="visitOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeVisitModal()">✕</button>
+    <div class="mtitle" id="visitModalTitle">📋 إضافة زيارة</div>
+    <div class="fr"><label class="flbl">الموقع *</label>
+      <select class="fsel" id="vSite"><option value="">— اختر موقع —</option></select>
+    </div>
+    <div class="fr2">
+      <div class="fr" style="margin:0"><label class="flbl">تاريخ الزيارة *</label><input class="finput" id="vDate" type="date"></div>
+      <div class="fr" style="margin:0"><label class="flbl">رقم الزيارة</label><input class="finput" id="vNum" type="number" min="1" placeholder="1"></div>
+    </div>
+    <div class="fr"><label class="flbl">المهندسون المشاركون</label>
+      <div class="eng-selector" id="engSelector"></div>
+    </div>
+    <div class="fr"><label class="flbl">ملاحظات الزيارة</label><textarea class="ftxt" id="vNotes" placeholder="ملاحظات..."></textarea></div>
+    <button class="sbtn sbtn-blue" onclick="saveVisit()">💾 حفظ الزيارة</button>
+  </div>
+</div>
+
+<!-- POSTPONE MODAL -->
+<div class="overlay" id="postponeOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closePostpone()">✕</button>
+    <div class="mtitle">⏰ تأجيل الزيارة</div>
+    <div class="fr"><label class="flbl">سبب التأجيل *</label><textarea class="ftxt" id="pReason" placeholder="اكتب سبب التأجيل..."></textarea></div>
+    <div class="fr"><label class="flbl">مؤجل إلى</label><input class="finput" id="pNewDate" type="date"></div>
+    <button class="sbtn sbtn-ops" onclick="savePostpone()">💾 تأجيل</button>
+  </div>
+</div>
+
+<!-- CANCEL MODAL -->
+<div class="overlay" id="cancelOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeCancel()">✕</button>
+    <div class="mtitle">❌ إلغاء الزيارة</div>
+    <div class="fr"><label class="flbl">سبب الإلغاء *</label><textarea class="ftxt" id="cReason" placeholder="اكتب سبب الإلغاء..."></textarea></div>
+    <button class="sbtn" style="background:var(--red);color:#fff" onclick="saveCancel()">تأكيد الإلغاء</button>
+  </div>
+</div>
+
+<!-- RATING MODAL -->
+<div class="overlay" id="ratingOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeRating()">✕</button>
+    <div class="mtitle">⭐ تقييم المهندسين</div>
+    <div id="ratingBody"></div>
+    <button class="sbtn sbtn-ops" onclick="saveRatings()">💾 حفظ التقييم</button>
+  </div>
+</div>
+
+<!-- NOTES MODAL -->
+<div class="overlay" id="notesOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeNotes()">✕</button>
+    <div class="mtitle" id="notesModalTitle">📝 ملاحظات الزيارة</div>
+    <div class="fr"><label class="flbl">ملاحظات الزيارة</label><textarea class="ftxt" id="nVisitNotes" placeholder="ملاحظات..." style="min-height:100px"></textarea></div>
+    <div class="fr"><label class="flbl">ملاحظات الفولو أب</label><textarea class="ftxt" id="nFollowup" placeholder="ملاحظات الفولو أب..." style="min-height:80px"></textarea></div>
+    <button class="sbtn sbtn-ops" onclick="saveNotes()">💾 حفظ الملاحظات</button>
+  </div>
+</div>
+
+<!-- PHOTOS MODAL -->
+<div class="overlay" id="photosOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closePhotos()">✕</button>
+    <div class="mtitle">📸 صور الزيارة</div>
+    <div class="photo-upload-area" id="uploadArea">
+      <input type="file" accept="image/*" multiple id="photoInput" onchange="handlePhotoUpload(event)">
+      <div style="font-size:2rem;margin-bottom:6px">📤</div>
+      <div style="font-size:.8rem;color:var(--muted)">اضغط أو اسحب صور هنا</div>
+      <div style="font-size:.68rem;color:var(--muted);margin-top:3px">JPG, PNG, WEBP</div>
+    </div>
+    <div class="photo-grid" id="photoGrid"></div>
+  </div>
+</div>
+
+<!-- ENGINEER MODAL -->
+<div class="overlay" id="engOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeEngModal()">✕</button>
+    <div class="mtitle" id="engModalTitle">👷 إضافة مهندس</div>
+    <div class="fr2">
+      <div class="fr" style="margin:0"><label class="flbl">الاسم *</label><input class="finput" id="eName" placeholder="اسم المهندس"></div>
+      <div class="fr" style="margin:0"><label class="flbl">التخصص</label><input class="finput" id="eSpec" placeholder="كهرباء / ميكانيكا..."></div>
+    </div>
+    <div class="fr2" style="margin-top:12px">
+      <div class="fr" style="margin:0"><label class="flbl">رقم الهاتف</label><input class="finput" id="ePhone" placeholder="01xxxxxxxxx"></div>
+      <div class="fr" style="margin:0"><label class="flbl">الإيميل</label><input class="finput" id="eEmail" type="email" placeholder="eng@email.com"></div>
+    </div>
+    <div class="fr"><label class="flbl">العنوان</label><input class="finput" id="eAddr" placeholder="عنوان المهندس"></div>
+    <button class="sbtn sbtn-blue" onclick="saveEngineer()">💾 حفظ المهندس</button>
+  </div>
+</div>
+
+<!-- FOLLOWUP MODAL -->
+<div class="overlay" id="followupOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeFollowup()">✕</button>
+    <div class="mtitle" id="fuTitle">📝 ملاحظات الفولو أب</div>
+    <div id="fuHistory" style="max-height:260px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="fr"><label class="flbl">إضافة ملاحظة جديدة</label><textarea class="ftxt" id="fuNote" placeholder="اكتب ملاحظة الفولو أب..."></textarea></div>
+    <div class="fr"><label class="flbl">التاريخ</label><input class="finput" id="fuDate" type="date"></div>
+    <button class="sbtn sbtn-ops" onclick="saveFollowup()">💾 إضافة الملاحظة</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════
+// CONFIG
+// ════════════════════════════════
+const SB_URL='https://cpbevbjzndfmtvlrwael.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwYmV2Ymp6bmRmbXR2bHJ3YWVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3OTI3ODgsImV4cCI6MjA4ODM2ODc4OH0.XjKAh5d5LthYe1pSu2ecwFl4jOA3I3TDc8DRpSkHHvQ';
+const {createClient}=supabase;
+const db=createClient(SB_URL,SB_KEY);
+
+let sites=[],visits=[],engineers=[],visitEngineers=[],visitPhotos=[],followups=[];
+let activeSiteId=null,activeVisitId=null,activeEngId=null;
+let visitFilter='all';
+let allSites=[],allVisits=[],allEngineers=[];
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+async function init(){
+  await loadAll();
+  setupScheduleControls();
+  hideLoad();
+}
+
+async function loadAll(){
+  const [s,v,e,ve]=await Promise.all([
+    db.from('sites').select('*').eq('is_active',true).order('name'),
+    db.from('visits').select('*').order('scheduled_date',{ascending:false}),
+    db.from('engineers').select('*').eq('is_active',true).order('name'),
+    db.from('visit_engineers').select('*')
+  ]);
+  sites=allSites=s.data||[];
+  visits=allVisits=v.data||[];
+  engineers=allEngineers=e.data||[];
+  visitEngineers=ve.data||[];
+  renderSites();renderVisits();renderEngineers();renderScores();renderSchedule();
+  populateSiteDropdown();populateEngSelector();
+}
+
+// ════════════════════════════════
+// TABS
+// ════════════════════════════════
+function switchTab(name,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('act'));
+  document.getElementById('view-'+name).classList.add('show');
+  el.classList.add('act');
+}
+
+// ════════════════════════════════
+// SITES
+// ════════════════════════════════
+function renderSites(){
+  const q=(document.getElementById('siteSearch').value||'').toLowerCase();
+  const list=sites.filter(s=>!q||s.name.toLowerCase().includes(q)||s.region?.toLowerCase().includes(q));
+  const grid=document.getElementById('sitesGrid');
+  if(!list.length){grid.innerHTML=`<div class="empty"><div class="empty-icon">🏢</div>لا توجد مواقع</div>`;return;}
+  grid.innerHTML=list.map(s=>{
+    const sVisits=visits.filter(v=>v.site_id===s.id);
+    const done=sVisits.filter(v=>v.status==='completed').length;
+    const pct=s.agreed_visits?Math.round(done/s.agreed_visits*100):0;
+    const remaining=Math.max(0,s.agreed_visits-done);
+    return `<div class="site-card" onclick="openSiteDetail('${s.id}')">
+      <div class="site-card-top">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="site-name">${s.name}</div>
+          <div class="status-dot ${s.is_active?'sd-active':'sd-inactive'}"></div>
+        </div>
+        <div class="site-region">📍 ${s.region||'—'} &nbsp;·&nbsp; ${s.address||''}</div>
+      </div>
+      <div class="site-card-mid">
+        <div class="site-info-item"><div>المسؤول</div><div class="site-info-val">${s.client_name||'—'}</div></div>
+        <div class="site-info-item"><div>الهاتف</div><div class="site-info-val">${s.client_phone||'—'}</div></div>
+        <div class="site-info-item"><div>زيارات منجزة</div><div class="site-info-val" style="color:var(--ops)">${done} / ${s.agreed_visits}</div></div>
+        <div class="site-info-item"><div>المتبقي</div><div class="site-info-val" style="color:${remaining===0?'var(--ops)':'var(--qual)'}">${remaining} زيارة</div></div>
+      </div>
+      <div class="site-card-bot">
+        <div class="visit-progress">
+          <div class="vp-label"><span>الإنجاز</span><span style="color:var(--ops)">${pct}%</span></div>
+          <div class="vp-bar"><div class="vp-fill" style="width:${pct}%;background:${pct>=100?'var(--ops)':'var(--blue)'}"></div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function filterSites(){renderSites();}
+
+let editSiteId=null;
+function openSiteModal(id=null){
+  editSiteId=id;
+  if(id){
+    const s=sites.find(x=>x.id===id);
+    if(s){
+      document.getElementById('sName').value=s.name;document.getElementById('sRegion').value=s.region||'';
+      document.getElementById('sAddress').value=s.address||'';document.getElementById('sClient').value=s.client_name||'';
+      document.getElementById('sPhone').value=s.client_phone||'';document.getElementById('sEmail').value=s.client_email||'';
+      document.getElementById('sAgreed').value=s.agreed_visits||0;document.getElementById('sFreq').value=s.visit_frequency||'monthly';
+      document.getElementById('sStart').value=s.contract_start||'';document.getElementById('sEnd').value=s.contract_end||'';
+      document.getElementById('sNotes').value=s.notes||'';
+    }
+    document.getElementById('siteModalTitle').textContent='✏️ تعديل الموقع';
+  } else {
+    ['sName','sRegion','sAddress','sClient','sPhone','sEmail','sNotes','sStart','sEnd'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('sAgreed').value=12;document.getElementById('sFreq').value='monthly';
+    document.getElementById('siteModalTitle').textContent='🏢 إضافة موقع جديد';
+  }
+  document.getElementById('siteOverlay').classList.add('open');
+}
+function closeSiteModal(){document.getElementById('siteOverlay').classList.remove('open');editSiteId=null;}
+document.getElementById('siteOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('siteOverlay'))closeSiteModal();});
+
+async function saveSite(){
+  const name=document.getElementById('sName').value.trim();
+  if(!name){showToast('⚠️ أدخل اسم الموقع','t-err');return;}
+  const payload={name,region:document.getElementById('sRegion').value.trim(),address:document.getElementById('sAddress').value.trim(),
+    client_name:document.getElementById('sClient').value.trim(),client_phone:document.getElementById('sPhone').value.trim(),
+    client_email:document.getElementById('sEmail').value.trim(),agreed_visits:parseInt(document.getElementById('sAgreed').value)||0,
+    visit_frequency:document.getElementById('sFreq').value,contract_start:document.getElementById('sStart').value||null,
+    contract_end:document.getElementById('sEnd').value||null,notes:document.getElementById('sNotes').value.trim()};
+  const{error}=editSiteId ? await db.from('sites').update(payload).eq('id',editSiteId) : await db.from('sites').insert([payload]);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  closeSiteModal();await loadAll();showToast(editSiteId?'✅ تم التحديث':'✅ تم إضافة الموقع','t-ok');
+}
+
+async function openSiteDetail(id){
+  activeSiteId=id;
+  const s=sites.find(x=>x.id===id);
+  if(!s)return;
+  const sVisits=visits.filter(v=>v.site_id===id);
+  const done=sVisits.filter(v=>v.status==='completed').length;
+  const{data:fu}=await db.from('site_followup').select('*').eq('site_id',id).order('note_date',{ascending:false});
+  const fuItems=(fu||[]).map(f=>`<div class="followup-item"><div class="fu-date">📅 ${f.note_date}</div><div class="fu-text">${f.note}</div></div>`).join('');
+  document.getElementById('siteDetailContent').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-left:30px">
+      <div>
+        <div style="font-size:1.1rem;font-weight:900">${s.name}</div>
+        <div style="font-size:.72rem;color:var(--muted)">📍 ${s.region||''} — ${s.address||''}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="openSiteModal('${id}')">✏️ تعديل</button>
+        <button class="btn btn-purple btn-sm" onclick="openFollowupModal('${id}')">📝 فولو أب</button>
+      </div>
+    </div>
+    <div class="info-grid" style="margin-bottom:18px">
+      <div class="info-item"><div class="info-lbl">المسؤول</div><div class="info-val">${s.client_name||'—'}</div></div>
+      <div class="info-item"><div class="info-lbl">الهاتف</div><div class="info-val">${s.client_phone||'—'}</div></div>
+      <div class="info-item"><div class="info-lbl">الإيميل</div><div class="info-val" style="font-size:.72rem">${s.client_email||'—'}</div></div>
+      <div class="info-item"><div class="info-lbl">الزيارات المتفق عليها</div><div class="info-val" style="color:var(--blue)">${s.agreed_visits}</div></div>
+      <div class="info-item"><div class="info-lbl">المنجزة</div><div class="info-val" style="color:var(--ops)">${done}</div></div>
+      <div class="info-item"><div class="info-lbl">المتبقية</div><div class="info-val" style="color:var(--qual)">${Math.max(0,s.agreed_visits-done)}</div></div>
+      <div class="info-item"><div class="info-lbl">بداية العقد</div><div class="info-val">${s.contract_start||'—'}</div></div>
+      <div class="info-item"><div class="info-lbl">نهاية العقد</div><div class="info-val">${s.contract_end||'—'}</div></div>
+    </div>
+    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">📋 تاريخ الزيارات</div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">
+      ${sVisits.length?sVisits.map(v=>{
+        const engIds=visitEngineers.filter(ve=>ve.visit_id===v.id).map(ve=>ve.engineer_id);
+        const engNames=engIds.map(eid=>(engineers.find(e=>e.id===eid)||{}).name||'').filter(Boolean);
+        const stMap={scheduled:'vs-sched مجدولة',completed:'vs-done مكتملة',postponed:'vs-post مؤجلة',cancelled:'vs-cancel ملغية'};
+        const [cls,lbl]=(stMap[v.status]||'vs-sched مجدولة').split(' ');
+        return `<div style="background:var(--s2);border-radius:8px;padding:10px 13px;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:.78rem;font-weight:700">زيارة ${v.visit_number||'—'} &nbsp;·&nbsp; <span style="color:var(--ops)">${v.scheduled_date}</span></div>
+            <div style="font-size:.65rem;color:var(--muted);margin-top:2px">${engNames.join(' · ')||'لم يُحدد مهندس'}</div>
+            ${v.general_notes?`<div style="font-size:.65rem;color:var(--dim);margin-top:2px">📝 ${v.general_notes}</div>`:''}
+          </div>
+          <span class="visit-status ${cls}">${lbl}</span>
+        </div>`;
+      }).join(''):`<div class="empty"><div class="empty-icon">📋</div>لا توجد زيارات مسجلة</div>`}
+    </div>
+    ${fu&&fu.length?`<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">📝 ملاحظات الفولو أب</div>${fuItems}`:''}
+    ${s.notes?`<div style="background:var(--s2);border-radius:8px;padding:11px 13px;margin-top:10px"><div style="font-size:.65rem;color:var(--muted);margin-bottom:3px">ملاحظات عامة</div><div style="font-size:.78rem">${s.notes}</div></div>`:''}
+  `;
+  document.getElementById('siteDetailOverlay').classList.add('open');
+}
+function closeSiteDetail(){document.getElementById('siteDetailOverlay').classList.remove('open');}
+document.getElementById('siteDetailOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('siteDetailOverlay'))closeSiteDetail();});
+
+// ════════════════════════════════
+// VISITS
+// ════════════════════════════════
+function renderVisits(){
+  let list=allVisits;
+  if(visitFilter!=='all')list=list.filter(v=>v.status===visitFilter);
+  document.getElementById('vstTotal').textContent=allVisits.length;
+  document.getElementById('vstDone').textContent=allVisits.filter(v=>v.status==='completed').length;
+  document.getElementById('vstPost').textContent=allVisits.filter(v=>v.status==='postponed').length;
+  document.getElementById('vstCancel').textContent=allVisits.filter(v=>v.status==='cancelled').length;
+  const el=document.getElementById('visitsList');
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-icon">📋</div>لا توجد زيارات</div>`;return;}
+  el.innerHTML=list.map(v=>{
+    const site=sites.find(s=>s.id===v.site_id);
+    const engIds=visitEngineers.filter(ve=>ve.visit_id===v.id).map(ve=>ve.engineer_id);
+    const engNames=engIds.map(eid=>(engineers.find(e=>e.id===eid)||{}).name||'').filter(Boolean);
+    const stMap={scheduled:'vs-sched مجدولة',completed:'vs-done مكتملة',postponed:'vs-post مؤجلة',cancelled:'vs-cancel ملغية'};
+    const [cls,lbl]=(stMap[v.status]||'vs-sched مجدولة').split(' ');
+    return `<div class="visit-card">
+      <div class="visit-card-top">
+        <div>
+          <div class="visit-site">${site?.name||'موقع غير محدد'}</div>
+          <div class="visit-date">📅 ${v.scheduled_date} ${v.visit_number?`· زيارة رقم ${v.visit_number}`:''}</div>
+        </div>
+        <span class="visit-status ${cls}">${lbl}</span>
+      </div>
+      ${engNames.length?`<div class="visit-engs">${engNames.map(n=>`<span class="eng-chip">👷 ${n}</span>`).join('')}</div>`:''}
+      ${v.general_notes?`<div style="font-size:.68rem;color:var(--muted);margin:4px 0">📝 ${v.general_notes}</div>`:''}
+      ${v.postpone_reason?`<div style="font-size:.65rem;color:var(--qual)">⏰ سبب التأجيل: ${v.postpone_reason}${v.postponed_to?' → '+v.postponed_to:''}</div>`:''}
+      ${v.cancel_reason?`<div style="font-size:.65rem;color:var(--red)">❌ سبب الإلغاء: ${v.cancel_reason}</div>`:''}
+      <div class="visit-actions">
+        ${v.status==='scheduled'?`
+          <button class="btn btn-ops btn-sm" onclick="completeVisit('${v.id}')">✅ إتمام</button>
+          <button class="btn btn-yellow btn-sm" onclick="openPostpone('${v.id}')">⏰ تأجيل</button>
+          <button class="btn btn-red btn-sm" onclick="openCancel('${v.id}')">❌ إلغاء</button>
+        `:''}
+        ${v.status==='completed'?`<button class="btn btn-yellow btn-sm" onclick="openRating('${v.id}')">⭐ تقييم</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="openNotesModal('${v.id}')">📝 ملاحظات</button>
+        <button class="btn btn-purple btn-sm" onclick="openPhotosModal('${v.id}')">📸 صور</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterVisits(f,el){
+  visitFilter=f;
+  document.querySelectorAll('.act-filter').forEach(b=>b.classList.remove('act-filter','btn-ops'));
+  el.classList.add('act-filter','btn-ops');
+  renderVisits();
+}
+
+function populateSiteDropdown(){
+  document.getElementById('vSite').innerHTML='<option value="">— اختر موقع —</option>'+
+    sites.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+function populateEngSelector(){
+  document.getElementById('engSelector').innerHTML=engineers.map(e=>
+    `<button class="eng-toggle" data-id="${e.id}" onclick="toggleEng(this)">${e.name}</button>`
+  ).join('');
+}
+function toggleEng(el){el.classList.toggle('sel');}
+
+let editVisitId=null;
+function openVisitModal(id=null){
+  editVisitId=id;
+  document.getElementById('vSite').value='';document.getElementById('vDate').value='';
+  document.getElementById('vNum').value='';document.getElementById('vNotes').value='';
+  document.querySelectorAll('.eng-toggle').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('visitModalTitle').textContent=id?'✏️ تعديل الزيارة':'📋 إضافة زيارة';
+  document.getElementById('visitOverlay').classList.add('open');
+}
+function closeVisitModal(){document.getElementById('visitOverlay').classList.remove('open');editVisitId=null;}
+document.getElementById('visitOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('visitOverlay'))closeVisitModal();});
+
+async function saveVisit(){
+  const siteId=document.getElementById('vSite').value;
+  const date=document.getElementById('vDate').value;
+  if(!siteId||!date){showToast('⚠️ اختر الموقع والتاريخ','t-err');return;}
+  const selEngs=[...document.querySelectorAll('.eng-toggle.sel')].map(b=>b.dataset.id);
+  const payload={site_id:siteId,scheduled_date:date,visit_number:parseInt(document.getElementById('vNum').value)||null,
+    general_notes:document.getElementById('vNotes').value.trim(),status:'scheduled'};
+  let vId=editVisitId;
+  if(editVisitId){
+    const{error}=await db.from('visits').update(payload).eq('id',editVisitId);
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+  } else {
+    const{data,error}=await db.from('visits').insert([payload]).select().single();
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+    vId=data.id;
+  }
+  // Save engineers
+  await db.from('visit_engineers').delete().eq('visit_id',vId);
+  if(selEngs.length){
+    await db.from('visit_engineers').insert(selEngs.map(eid=>({visit_id:vId,engineer_id:eid})));
+  }
+  closeVisitModal();await loadAll();showToast('✅ تم حفظ الزيارة','t-ok');
+}
+
+async function completeVisit(id){
+  await db.from('visits').update({status:'completed',actual_date:new Date().toISOString().split('T')[0]}).eq('id',id);
+  await loadAll();showToast('✅ تم إتمام الزيارة','t-ok');
+}
+
+// Postpone
+let postponeId=null;
+function openPostpone(id){postponeId=id;document.getElementById('pReason').value='';document.getElementById('pNewDate').value='';document.getElementById('postponeOverlay').classList.add('open');}
+function closePostpone(){document.getElementById('postponeOverlay').classList.remove('open');postponeId=null;}
+document.getElementById('postponeOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('postponeOverlay'))closePostpone();});
+async function savePostpone(){
+  const reason=document.getElementById('pReason').value.trim();
+  if(!reason){showToast('⚠️ اكتب سبب التأجيل','t-err');return;}
+  await db.from('visits').update({status:'postponed',postpone_reason:reason,postponed_to:document.getElementById('pNewDate').value||null}).eq('id',postponeId);
+  closePostpone();await loadAll();showToast('⏰ تم التأجيل','t-info');
+}
+
+// Cancel
+let cancelId=null;
+function openCancel(id){cancelId=id;document.getElementById('cReason').value='';document.getElementById('cancelOverlay').classList.add('open');}
+function closeCancel(){document.getElementById('cancelOverlay').classList.remove('open');cancelId=null;}
+document.getElementById('cancelOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('cancelOverlay'))closeCancel();});
+async function saveCancel(){
+  const reason=document.getElementById('cReason').value.trim();
+  if(!reason){showToast('⚠️ اكتب سبب الإلغاء','t-err');return;}
+  await db.from('visits').update({status:'cancelled',cancel_reason:reason}).eq('id',cancelId);
+  closeCancel();await loadAll();showToast('❌ تم الإلغاء','t-info');
+}
+
+// Rating
+let ratingVisitId=null,ratingData={};
+function openRating(id){
+  ratingVisitId=id;ratingData={};
+  const engIds=visitEngineers.filter(ve=>ve.visit_id===id);
+  const body=document.getElementById('ratingBody');
+  body.innerHTML=engIds.map(ve=>{
+    const eng=engineers.find(e=>e.id===ve.engineer_id);
+    const curr=ve.rating||0;
+    return `<div style="background:var(--s2);border-radius:9px;padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:.82rem;font-weight:700;margin-bottom:8px">👷 ${eng?.name||'—'}</div>
+      <div class="stars" id="stars-${ve.engineer_id}">${[1,2,3,4,5].map(i=>`<span class="star ${i<=curr?'on':''}" onclick="setRating('${ve.engineer_id}',${i})">★</span>`).join('')}</div>
+      <textarea class="ftxt" id="rnotes-${ve.engineer_id}" placeholder="ملاحظات التقييم..." style="margin-top:8px;min-height:50px">${ve.rating_notes||''}</textarea>
+    </div>`;
+  }).join('');
+  if(!engIds.length)body.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px">لا يوجد مهندسون مضافون لهذه الزيارة</div>';
+  document.getElementById('ratingOverlay').classList.add('open');
+}
+function setRating(engId,val){
+  ratingData[engId]=val;
+  document.querySelectorAll(`#stars-${engId} .star`).forEach((s,i)=>s.classList.toggle('on',i<val));
+}
+function closeRating(){document.getElementById('ratingOverlay').classList.remove('open');ratingVisitId=null;}
+document.getElementById('ratingOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('ratingOverlay'))closeRating();});
+async function saveRatings(){
+  const updates=Object.entries(ratingData).map(([engId,rating])=>
+    db.from('visit_engineers').update({rating,rating_notes:document.getElementById(`rnotes-${engId}`)?.value||''}).eq('visit_id',ratingVisitId).eq('engineer_id',engId)
+  );
+  await Promise.all(updates);
+  closeRating();await loadAll();showToast('⭐ تم حفظ التقييم','t-ok');
+}
+
+// Notes
+let notesVisitId=null;
+function openNotesModal(id){
+  notesVisitId=id;
+  const v=visits.find(x=>x.id===id);
+  document.getElementById('nVisitNotes').value=v?.general_notes||'';
+  document.getElementById('nFollowup').value=v?.followup_notes||'';
+  document.getElementById('notesModalTitle').textContent='📝 ملاحظات الزيارة';
+  document.getElementById('notesOverlay').classList.add('open');
+}
+function closeNotes(){document.getElementById('notesOverlay').classList.remove('open');notesVisitId=null;}
+document.getElementById('notesOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('notesOverlay'))closeNotes();});
+async function saveNotes(){
+  await db.from('visits').update({general_notes:document.getElementById('nVisitNotes').value,followup_notes:document.getElementById('nFollowup').value}).eq('id',notesVisitId);
+  closeNotes();await loadAll();showToast('📝 تم حفظ الملاحظات','t-ok');
+}
+
+// Photos
+let photosVisitId=null;
+async function openPhotosModal(id){
+  photosVisitId=id;
+  const{data}=await db.from('visit_photos').select('*').eq('visit_id',id);
+  const grid=document.getElementById('photoGrid');
+  grid.innerHTML=(data||[]).map(p=>`<div class="photo-thumb"><img src="${p.photo_url}" alt="${p.caption||''}"><button class="photo-del" onclick="deletePhoto('${p.id}')">✕</button></div>`).join('');
+  document.getElementById('photosOverlay').classList.add('open');
+}
+function closePhotos(){document.getElementById('photosOverlay').classList.remove('open');photosVisitId=null;}
+document.getElementById('photosOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('photosOverlay'))closePhotos();});
+
+async function handlePhotoUpload(e){
+  const files=Array.from(e.target.files);
+  if(!files.length)return;
+  showToast('📤 جاري رفع الصور...','t-info');
+  for(const file of files){
+    const ext=file.name.split('.').pop();
+    const path=`${photosVisitId}/${Date.now()}.${ext}`;
+    const{data,error}=await db.storage.from('visit-photos').upload(path,file,{upsert:true});
+    if(!error){
+      const{data:urlData}=db.storage.from('visit-photos').getPublicUrl(path);
+      await db.from('visit_photos').insert([{visit_id:photosVisitId,photo_url:urlData.publicUrl}]);
+    }
+  }
+  await openPhotosModal(photosVisitId);showToast('✅ تم رفع الصور','t-ok');
+}
+async function deletePhoto(id){
+  await db.from('visit_photos').delete().eq('id',id);
+  await openPhotosModal(photosVisitId);
+}
+
+// ════════════════════════════════
+// ENGINEERS
+// ════════════════════════════════
+function renderEngineers(){
+  const q=(document.getElementById('engSearch').value||'').toLowerCase();
+  const list=engineers.filter(e=>!q||e.name.toLowerCase().includes(q));
+  const grid=document.getElementById('engineersGrid');
+  if(!list.length){grid.innerHTML=`<div class="empty"><div class="empty-icon">👷</div>لا يوجد مهندسون</div>`;return;}
+  grid.innerHTML=list.map(e=>{
+    const eVisits=visitEngineers.filter(ve=>ve.engineer_id===e.id);
+    const ratings=eVisits.filter(ve=>ve.rating).map(ve=>ve.rating);
+    const avg=ratings.length?((ratings.reduce((a,b)=>a+b,0)/ratings.length)).toFixed(1):null;
+    return `<div class="eng-card">
+      <div class="eng-avatar">${e.name[0]}</div>
+      <div class="eng-info">
+        <div class="eng-name">${e.name}</div>
+        ${e.specialty?`<div class="eng-detail">🔧 ${e.specialty}</div>`:''}
+        ${e.phone?`<div class="eng-detail">📞 ${e.phone}</div>`:''}
+        ${e.address?`<div class="eng-detail">📍 ${e.address}</div>`:''}
+        <div class="eng-stats">
+          <div class="eng-stat"><div class="eng-stat-val" style="color:var(--blue)">${eVisits.length}</div><div class="eng-stat-lbl">زيارة</div></div>
+          ${avg?`<div class="eng-stat"><div class="eng-stat-val" style="color:var(--qual)">${avg}★</div><div class="eng-stat-lbl">متوسط</div></div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="openEngModal('${e.id}')">✏️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function filterEngineers(){renderEngineers();}
+
+let editEngId=null;
+function openEngModal(id=null){
+  editEngId=id;
+  if(id){
+    const e=engineers.find(x=>x.id===id);
+    if(e){document.getElementById('eName').value=e.name;document.getElementById('eSpec').value=e.specialty||'';document.getElementById('ePhone').value=e.phone||'';document.getElementById('eEmail').value=e.email||'';document.getElementById('eAddr').value=e.address||'';}
+    document.getElementById('engModalTitle').textContent='✏️ تعديل مهندس';
+  } else {
+    ['eName','eSpec','ePhone','eEmail','eAddr'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('engModalTitle').textContent='👷 إضافة مهندس';
+  }
+  document.getElementById('engOverlay').classList.add('open');
+}
+function closeEngModal(){document.getElementById('engOverlay').classList.remove('open');editEngId=null;}
+document.getElementById('engOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('engOverlay'))closeEngModal();});
+
+async function saveEngineer(){
+  const name=document.getElementById('eName').value.trim();
+  if(!name){showToast('⚠️ أدخل اسم المهندس','t-err');return;}
+  const payload={name,specialty:document.getElementById('eSpec').value.trim(),phone:document.getElementById('ePhone').value.trim(),email:document.getElementById('eEmail').value.trim(),address:document.getElementById('eAddr').value.trim()};
+  const{error}=editEngId?await db.from('engineers').update(payload).eq('id',editEngId):await db.from('engineers').insert([payload]);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  closeEngModal();await loadAll();showToast('✅ تم حفظ المهندس','t-ok');
+}
+
+// ════════════════════════════════
+// SCORES
+// ════════════════════════════════
+function renderScores(){
+  const el=document.getElementById('scoresList');
+  if(!engineers.length){el.innerHTML=`<div class="empty"><div class="empty-icon">⭐</div>لا يوجد مهندسون</div>`;return;}
+  const rows=engineers.map(e=>{
+    const eVisits=visitEngineers.filter(ve=>ve.engineer_id===e.id);
+    const rated=eVisits.filter(ve=>ve.rating);
+    const avg=rated.length?((rated.reduce((a,b)=>a+b.rating,0)/rated.length)).toFixed(1):null;
+    const starsHtml=[1,2,3,4,5].map(i=>`<span style="color:${i<=Math.round(avg||0)?'#f59e0b':'var(--muted)'}">★</span>`).join('');
+    return `<div class="score-row">
+      <div>
+        <div class="score-name">${e.name}</div>
+        <div class="score-visits">${eVisits.length} زيارة · ${rated.length} تقييم</div>
+      </div>
+      <div class="score-stars-avg">
+        <div style="display:flex;gap:2px;font-size:.9rem">${starsHtml}</div>
+        ${avg?`<div class="avg-num">${avg}</div>`:'<div style="font-size:.7rem;color:var(--muted)">لا تقييم</div>'}
+      </div>
+    </div>`;
+  });
+  el.innerHTML=rows.join('');
+}
+
+// ════════════════════════════════
+// FOLLOWUP
+// ════════════════════════════════
+let followupSiteId=null;
+async function openFollowupModal(id){
+  followupSiteId=id;
+  const site=sites.find(s=>s.id===id);
+  document.getElementById('fuTitle').textContent=`📝 فولو أب — ${site?.name||''}`;
+  document.getElementById('fuNote').value='';
+  document.getElementById('fuDate').value=new Date().toISOString().split('T')[0];
+  const{data}=await db.from('site_followup').select('*').eq('site_id',id).order('note_date',{ascending:false});
+  const history=document.getElementById('fuHistory');
+  history.innerHTML=(data||[]).length
+    ?(data||[]).map(f=>`<div class="followup-item"><div class="fu-date">📅 ${f.note_date}</div><div class="fu-text">${f.note}</div></div>`).join('')
+    :'<div style="text-align:center;color:var(--muted);font-size:.74rem;padding:12px">لا توجد ملاحظات سابقة</div>';
+  document.getElementById('followupOverlay').classList.add('open');
+}
+function closeFollowup(){document.getElementById('followupOverlay').classList.remove('open');followupSiteId=null;}
+document.getElementById('followupOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('followupOverlay'))closeFollowup();});
+async function saveFollowup(){
+  const note=document.getElementById('fuNote').value.trim();
+  if(!note){showToast('⚠️ اكتب ملاحظة','t-err');return;}
+  const{error}=await db.from('site_followup').insert([{site_id:followupSiteId,note,note_date:document.getElementById('fuDate').value}]);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  document.getElementById('fuNote').value='';
+  await openFollowupModal(followupSiteId);
+  showToast('📝 تم إضافة الملاحظة','t-ok');
+}
+
+// ════════════════════════════════
+// SCHEDULE
+// ════════════════════════════════
+function setupScheduleControls(){
+  const now=new Date();
+  const sel=document.getElementById('schedMonth');sel.value=now.getMonth();
+  const yearSel=document.getElementById('schedYear');
+  for(let y=now.getFullYear()-1;y<=now.getFullYear()+2;y++){
+    const o=document.createElement('option');o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;
+    yearSel.appendChild(o);
+  }
+  renderSchedule();
+}
+
+function renderSchedule(){
+  const month=parseInt(document.getElementById('schedMonth').value);
+  const year=parseInt(document.getElementById('schedYear').value);
+  const monthNames=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  document.getElementById('schedTitle').textContent=`جدول الزيارات — ${monthNames[month]} ${year}`;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  // Get visits for this month
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const monthVisits=visits.filter(v=>v.scheduled_date&&v.scheduled_date.startsWith(monthStr));
+  // Head: sites
+  const thead=document.getElementById('schedHead');
+  thead.innerHTML=`<th>المهندس / الموقع</th>`+Array.from({length:daysInMonth},(_,i)=>`<th>${i+1}</th>`).join('');
+  // Body: one row per engineer
+  const tbody=document.getElementById('schedBody');
+  if(!engineers.length){tbody.innerHTML=`<tr><td colspan="${daysInMonth+1}" style="text-align:center;padding:20px;color:var(--muted)">لا يوجد مهندسون</td></tr>`;return;}
+  tbody.innerHTML=engineers.map(eng=>{
+    const cells=Array.from({length:daysInMonth},(_,d)=>{
+      const dayStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d+1).padStart(2,'0')}`;
+      const dayVisits=monthVisits.filter(v=>{
+        const veIds=visitEngineers.filter(ve=>ve.visit_id===v.id).map(ve=>ve.engineer_id);
+        return v.scheduled_date===dayStr&&veIds.includes(eng.id);
+      });
+      if(!dayVisits.length)return '<td></td>';
+      const v=dayVisits[0];
+      const site=sites.find(s=>s.id===v.site_id);
+      const colors={scheduled:'#60a5fa',completed:'var(--ops)',postponed:'var(--qual)',cancelled:'var(--red)'};
+      return `<td style="background:rgba(0,0,0,.2)"><div style="background:${colors[v.status]||'#60a5fa'};border-radius:4px;padding:2px 4px;font-size:.55rem;font-weight:700;color:#07090f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px" title="${site?.name||''}">${(site?.name||'').slice(0,6)}</div></td>`;
+    }).join('');
+    return `<tr><td style="font-weight:700;white-space:nowrap;font-size:.74rem">${eng.name}</td>${cells}</tr>`;
+  }).join('');
+}
+
+async function exportScheduleExcel(){
+  showToast('📥 جاري التصدير...','t-info');
+  const month=parseInt(document.getElementById('schedMonth').value);
+  const year=parseInt(document.getElementById('schedYear').value);
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const monthVisits=visits.filter(v=>v.scheduled_date?.startsWith(monthStr));
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const headers=['المهندس',...Array.from({length:daysInMonth},(_,i)=>String(i+1))];
+  const rows=engineers.map(eng=>{
+    const cells=Array.from({length:daysInMonth},(_,d)=>{
+      const dayStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d+1).padStart(2,'0')}`;
+      const v=monthVisits.find(v=>{
+        const veIds=visitEngineers.filter(ve=>ve.visit_id===v.id).map(ve=>ve.engineer_id);
+        return v.scheduled_date===dayStr&&veIds.includes(eng.id);
+      });
+      if(!v)return '';
+      return sites.find(s=>s.id===v.site_id)?.name||'زيارة';
+    });
+    return [eng.name,...cells];
+  });
+  const csv='\uFEFF'+[headers,...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`جدول_${monthStr}.csv`;a.click();
+  showToast('✅ تم التصدير','t-ok');
+}
+
+// ════════════════════════════════
+// UTILS
+// ════════════════════════════════
+function showToast(msg,cls='t-ok'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${cls} show`;setTimeout(()=>t.classList.remove('show'),3000);}
+function hideLoad(){const el=document.getElementById('loadOv');if(!el)return;el.classList.add('hide');setTimeout(()=>{if(el.parentNode)el.remove();},400);}
+
+init();
+</script>
+</body>
+</html>
