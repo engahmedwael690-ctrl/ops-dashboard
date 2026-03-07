@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الإيميلات والتقارير</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#07090f;--s:#0f1623;--s2:#161e2e;--s3:#1c2840;
+  --ops:#00d4aa;--og:rgba(0,212,170,.12);
+  --qual:#f59e0b;--qg:rgba(245,158,11,.12);
+  --blue:#3b82f6;--blg:rgba(59,130,246,.12);
+  --red:#fc5c7d;--rdg:rgba(252,92,125,.12);
+  --purple:#818cf8;--pg:rgba(129,140,248,.12);
+  --text:#e2e8f0;--muted:#4a5568;--dim:#718096;
+  --border:rgba(255,255,255,.06);--r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+.load-ov{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .35s}
+.load-ov.hide{opacity:0;pointer-events:none}
+.spinner{width:40px;height:40px;border:3px solid var(--s3);border-top-color:var(--ops);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(7,9,15,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 22px;display:flex;align-items:center;justify-content:space-between;height:58px}
+.logo{font-size:1.1rem;font-weight:900;background:linear-gradient(135deg,#3b82f6,var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.back-btn{padding:5px 14px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--dim);font-family:'Cairo',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .18s;text-decoration:none;display:flex;align-items:center;gap:5px}
+.back-btn:hover{background:var(--s3);color:var(--text)}
+
+/* TABS */
+.tabs-bar{background:transparent;border-bottom:1px solid var(--border);padding:0 22px;display:flex}
+.tab{padding:10px 18px;border:none;background:transparent;color:var(--muted);font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s}
+.tab:hover{color:var(--text)}.tab.act{color:var(--ops);border-bottom-color:var(--ops)}
+
+main{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:22px}
+.view{display:none}.view.show{display:block}
+
+/* FORMS */
+.card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+.card-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:.9rem;font-weight:800;display:flex;align-items:center;gap:8px}
+.card-body{padding:18px}
+.fr{margin-bottom:13px}.flbl{font-size:.71rem;color:var(--dim);margin-bottom:4px;display:block;font-weight:700}
+.finput,.fsel,.ftxt{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Cairo',sans-serif;font-size:.82rem;outline:none;transition:border-color .2s}
+.finput:focus,.fsel:focus,.ftxt:focus{border-color:rgba(255,255,255,.2)}
+.fsel option{background:var(--s2)}.ftxt{resize:vertical;min-height:80px}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.btn{padding:8px 18px;border-radius:8px;border:none;font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-ops{background:var(--ops);color:#07090f}.btn-ops:hover{filter:brightness(1.1)}
+.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{filter:brightness(1.1)}
+.btn-purple{background:var(--purple);color:#07090f}.btn-purple:hover{filter:brightness(1.1)}
+.btn-ghost{background:var(--s2);color:var(--dim);border:1px solid var(--border)}.btn-ghost:hover{background:var(--s3);color:var(--text)}
+.btn-full{width:100%;justify-content:center;padding:11px}
+
+/* EMAIL PREVIEW */
+.email-preview-wrap{background:var(--s2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.ep-toolbar{padding:10px 14px;background:var(--s3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ep-toolbar-title{font-size:.73rem;color:var(--muted);font-weight:700}
+.ep-body{padding:16px;font-family:'Inter',sans-serif;font-size:.82rem;line-height:1.7;color:var(--text);max-height:500px;overflow-y:auto;white-space:pre-wrap;direction:ltr;text-align:left}
+.ep-meta{padding:10px 14px;background:var(--s3);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap}
+.ep-meta-item{font-size:.68rem;color:var(--muted)}.ep-meta-item strong{color:var(--text)}
+
+/* STATUS INDICATOR */
+.auth-status{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:.76rem;font-weight:600;margin-bottom:14px}
+.auth-ok{background:var(--og);color:var(--ops);border:1px solid rgba(0,212,170,.2)}
+.auth-warn{background:var(--qg);color:var(--qual);border:1px solid rgba(245,158,11,.2)}
+.auth-err{background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.2)}
+
+/* ATTACHMENT */
+.attach-area{border:2px dashed var(--border);border-radius:9px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative;margin-bottom:10px}
+.attach-area:hover{border-color:var(--blue)}
+.attach-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.attach-list{display:flex;flex-direction:column;gap:5px}
+.attach-item{display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:7px;padding:7px 11px;font-size:.75rem}
+.attach-name{color:var(--text);font-weight:600}
+.attach-size{color:var(--muted);font-size:.65rem}
+.attach-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:.85rem}
+
+/* REPORT */
+.report-section{margin-bottom:24px}
+.report-section-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:700;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.site-report-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;border-right:3px solid var(--ops)}
+.src-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.src-name{font-size:.88rem;font-weight:800}
+.src-badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge{padding:2px 9px;border-radius:4px;font-size:.6rem;font-weight:700}
+.b-done{background:var(--og);color:var(--ops)}.b-pend{background:var(--blg);color:#60a5fa}
+.b-post{background:var(--qg);color:var(--qual)}.b-cancel{background:var(--rdg);color:var(--red)}
+.src-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.src-stat{background:var(--s3);border-radius:7px;padding:8px 10px;text-align:center}
+.src-stat-val{font-size:1rem;font-weight:900}
+.src-stat-lbl{font-size:.58rem;color:var(--muted);margin-top:1px}
+.followup-note{background:var(--s3);border-radius:7px;padding:8px 11px;margin-bottom:5px;font-size:.74rem;line-height:1.5}
+.fn-date{font-size:.6rem;color:var(--muted);margin-bottom:2px}
+.upcoming-visit{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--s3);border-radius:7px;margin-bottom:4px;font-size:.74rem}
+
+/* DAILY SCHEDULE */
+.daily-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.daily-card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.dc-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.dc-avatar{width:36px;height:36px;border-radius:50%;background:var(--blg);border:2px solid rgba(59,130,246,.25);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;color:var(--blue);flex-shrink:0}
+.dc-name{font-size:.84rem;font-weight:800}
+.dc-count{font-size:.65rem;color:var(--muted)}
+.dc-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.dc-visit{background:var(--s2);border-radius:7px;padding:9px 11px;border-right:3px solid var(--ops)}
+.dc-site-name{font-size:.78rem;font-weight:700}
+.dc-site-meta{font-size:.63rem;color:var(--muted);margin-top:2px}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.82);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--s);border:1px solid rgba(255,255,255,.09);border-radius:18px;width:520px;max-width:100%;padding:24px;position:relative;animation:mup .22s ease;max-height:90vh;overflow-y:auto}
+@keyframes mup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.mcls{position:absolute;top:12px;left:12px;width:27px;height:27px;border-radius:6px;background:var(--s2);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:.82rem;display:flex;align-items:center;justify-content:center}
+.mcls:hover{color:var(--text)}.mtitle{font-size:.95rem;font-weight:800;margin-bottom:15px;padding-left:30px}
+.sbtn{width:100%;padding:10px;border-radius:9px;border:none;font-family:'Cairo',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;transition:all .2s;margin-top:5px}
+.sbtn-ops{background:var(--ops);color:#07090f}.sbtn-ops:hover{filter:brightness(1.1)}
+/* DATA LOG */
+.dl-entry{background:var(--s2);border-radius:9px;padding:11px 14px;margin-bottom:8px;border-right:3px solid var(--ops);position:relative}
+.dl-date{font-size:.62rem;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between}
+.dl-text{font-size:.78rem;line-height:1.6}
+.dl-actions{display:flex;gap:5px}
+.dl-tag{font-size:.58rem;padding:1px 7px;border-radius:4px;font-weight:700;margin-right:5px}
+.dl-tag-note{background:var(--og);color:var(--ops)}
+.dl-tag-issue{background:var(--rdg);color:var(--red)}
+.dl-tag-action{background:var(--blg);color:#60a5fa}
+/* TOAST */
+.toast{position:fixed;bottom:16px;right:16px;z-index:9999;background:var(--s);border:1px solid var(--border);border-radius:9px;padding:10px 16px;font-size:.76rem;font-weight:600;transform:translateY(50px);opacity:0;transition:all .26s;box-shadow:0 7px 22px rgba(0,0,0,.55)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.t-ok{border-color:var(--ops)}.toast.t-err{border-color:var(--red)}.toast.t-info{border-color:var(--blue)}
+
+/* PROGRESS */
+.sending-progress{display:none;align-items:center;gap:10px;padding:10px 14px;background:var(--blg);border-radius:8px;margin-bottom:12px;font-size:.78rem}
+.sending-progress.show{display:flex}
+.prog-bar-wrap{flex:1;height:5px;background:var(--s3);border-radius:3px;overflow:hidden}
+.prog-bar-fill{height:100%;background:var(--blue);border-radius:3px;transition:width .4s}
+
+@media(max-width:700px){.fr2,.fr3{grid-template-columns:1fr}.src-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* PRINT */
+@media print{
+  header,.tabs-bar,.btn,.attach-area,#sendBtn{display:none!important}
+  body{background:#fff;color:#000}
+  .card{border:1px solid #ddd;background:#fff}
+  .card-body{padding:12px}
+  .site-report-card{background:#f9f9f9;border:1px solid #ddd;color:#000}
+  .followup-note,.upcoming-visit{background:#f3f3f3;color:#000}
+}
+</style>
+</head>
+<body>
+
+<div class="load-ov" id="loadOv"><div class="spinner"></div><div style="font-size:.78rem;color:var(--muted)">جاري التحميل...</div></div>
+
+<header>
+  <div class="logo">📧 الإيميلات والتقارير</div>
+  <div style="display:flex;gap:8px">
+    <a href="sites.html" class="back-btn">← المواقع</a>
+    <a href="index.html" class="back-btn">← الداش بورد</a>
+  </div>
+</header>
+
+<div class="tabs-bar">
+  <button class="tab act" onclick="switchTab('email',this)">📧 إرسال إيميل</button>
+  <button class="tab" onclick="switchTab('report',this)">📝 تقرير الفولو أب</button>
+  <button class="tab" onclick="switchTab('daily',this)">📅 الجدول اليومي</button>
+</div>
+
+<main>
+
+<!-- ══ EMAIL TAB ══ -->
+<div class="view show" id="view-email">
+
+  <!-- MS Auth -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">🔐 ربط Outlook</div>
+      <div id="authActions"></div>
+    </div>
+    <div class="card-body">
+      <div id="authStatus" class="auth-status auth-warn">⚠️ يجب تسجيل الدخول بحساب Outlook أولاً</div>
+      <div id="authInfo" style="display:none">
+        <p style="font-size:.76rem;color:var(--dim);line-height:1.7">
+          النظام بيستخدم <strong style="color:var(--text)">Microsoft Graph API</strong> لإرسال الإيميلات من حسابك مباشرة.<br>
+          لازم تسجّل تطبيق في <strong style="color:var(--text)">Azure Portal</strong> وتحط الـ Client ID هنا:
+        </p>
+        <div class="fr" style="margin-top:12px">
+          <label class="flbl">Azure App Client ID</label>
+          <input class="finput" id="msClientId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="">
+        </div>
+        <div class="fr">
+          <label class="flbl">Tenant ID (أو common لو personal)</label>
+          <input class="finput" id="msTenantId" placeholder="common" value="common">
+        </div>
+        <button class="btn btn-blue" onclick="saveAzureConfig()">💾 حفظ الإعدادات</button>
+        <div style="margin-top:14px;padding:12px;background:var(--s2);border-radius:8px;font-size:.72rem;color:var(--dim);line-height:1.8">
+          <strong style="color:var(--qual)">⚙️ خطوات إعداد Azure بسيطة:</strong><br>
+          1. افتح <a href="https://portal.azure.com" target="_blank" style="color:var(--blue)">portal.azure.com</a><br>
+          2. Azure Active Directory → App Registrations → New Registration<br>
+          3. اسم التطبيق: <em>Dashboard Mailer</em> — Redirect URI: <code style="color:var(--ops)">${window.location.origin}</code><br>
+          4. API Permissions → Add → Microsoft Graph → Delegated → <strong>Mail.Send</strong><br>
+          5. انسخ الـ Application (client) ID وحطه فوق
+        </div>
+      </div>
+      <button class="btn btn-ghost" onclick="toggleAuthInfo()" id="authInfoBtn" style="margin-top:10px;font-size:.72rem">⚙️ إعدادات Azure</button>
+    </div>
+  </div>
+
+  <!-- Email Composer -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">✉️ كتابة الإيميل</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost" onclick="loadTemplate('visit_report')" style="font-size:.7rem">📋 تقرير زيارة</button>
+        <button class="btn btn-ghost" onclick="loadTemplate('followup')" style="font-size:.7rem">📝 فولو أب</button>
+        <button class="btn btn-ghost" onclick="loadTemplate('schedule')" style="font-size:.7rem">📅 جدول</button>
+        <button class="btn btn-ghost" onclick="loadTemplate('trend')" style="font-size:.7rem;color:#a78bfa">📈 Trend</button>
+        <button class="btn btn-ghost" onclick="loadTemplate('risk')" style="font-size:.7rem;color:#fc8b9e">⚠️ Risk</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="fr2">
+        <div class="fr" style="margin:0">
+          <label class="flbl">إلى (To) *</label>
+          <select class="fsel" id="emailTo">
+            <option value="">— اختر العميل —</option>
+          </select>
+        </div>
+        <div class="fr" style="margin:0">
+          <label class="flbl">إيميل مخصص (أو أكتر من إيميل فاصل بـ ,)</label>
+          <input class="finput" id="emailToCustom" placeholder="client@company.com">
+        </div>
+      </div>
+
+      <div class="fr" style="margin-top:12px">
+        <label class="flbl">CC — الإيميلات الإضافية</label>
+        <input class="finput" id="emailCC" value="dr.maha@company.com" placeholder="dr.maha@company.com, other@company.com">
+        <div style="font-size:.63rem;color:var(--muted);margin-top:3px">⚠️ غيّر إيميل دكتور مها للإيميل الصح</div>
+      </div>
+
+      <div class="fr">
+        <label class="flbl">الموقع المرتبط (اختياري — لتحميل البيانات)</label>
+        <select class="fsel" id="emailSite" onchange="onSiteSelect()">
+          <option value="">— اختر موقع —</option>
+        </select>
+      </div>
+
+      <div class="fr">
+        <label class="flbl">Subject *</label>
+        <input class="finput" id="emailSubject" placeholder="Site Visit Report — [Site Name]" dir="ltr">
+      </div>
+
+      <div class="fr">
+        <label class="flbl">نص الإيميل *</label>
+        <textarea class="ftxt" id="emailBody" dir="ltr" style="font-family:'Inter',sans-serif;font-size:.8rem;min-height:260px" placeholder="Write email body here..."></textarea>
+      </div>
+
+      <!-- Attachments -->
+      <div class="fr">
+        <label class="flbl">المرفقات</label>
+        <div class="attach-area" id="attachArea">
+          <input type="file" multiple id="attachInput" onchange="handleAttach(event)">
+          <div style="font-size:1.4rem;margin-bottom:4px">📎</div>
+          <div style="font-size:.78rem;color:var(--muted)">اضغط أو اسحب ملفات هنا</div>
+        </div>
+        <div class="attach-list" id="attachList"></div>
+      </div>
+
+      <div class="sending-progress" id="sendProgress">
+        <span>📤 جاري الإرسال...</span>
+        <div class="prog-bar-wrap"><div class="prog-bar-fill" id="progFill" style="width:0%"></div></div>
+      </div>
+
+      <button class="btn btn-ops btn-full" id="sendBtn" onclick="sendEmail()">
+        📧 إرسال الإيميل
+      </button>
+    </div>
+  </div>
+
+  <!-- Sent History -->
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">📬 سجل الإيميلات المرسلة</div></div>
+    <div class="card-body">
+      <div id="sentHistory" style="display:flex;flex-direction:column;gap:7px">
+        <div style="text-align:center;color:var(--muted);font-size:.76rem;padding:16px">لا توجد إيميلات مرسلة بعد</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ FOLLOWUP REPORT TAB ══ -->
+<div class="view" id="view-report">
+  <!-- Data Log per site -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">📒 Data Log — ملاحظات الموقع</div>
+      <button class="btn btn-ops" onclick="openDataLogModal()">+ إضافة ملاحظة</button>
+    </div>
+    <div class="card-body">
+      <div class="fr" style="margin-bottom:14px">
+        <label class="flbl">اختر الموقع</label>
+        <select class="fsel" id="dataLogSite" onchange="loadDataLog()">
+          <option value="">— اختر موقع لعرض السجل —</option>
+        </select>
+      </div>
+      <div id="dataLogContent">
+        <div style="text-align:center;color:var(--muted);font-size:.76rem;padding:20px">اختر موقع لعرض الـ Data Log</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">📝 تقرير الفولو أب</div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة / PDF</button>
+        <button class="btn btn-ops" onclick="generateReport()">🔄 تحديث التقرير</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="fr3">
+        <div class="fr" style="margin:0">
+          <label class="flbl">الفترة من</label>
+          <input class="finput" id="repFrom" type="date">
+        </div>
+        <div class="fr" style="margin:0">
+          <label class="flbl">إلى</label>
+          <input class="finput" id="repTo" type="date">
+        </div>
+        <div class="fr" style="margin:0">
+          <label class="flbl">تصفية الموقع</label>
+          <select class="fsel" id="repSite" onchange="generateReport()">
+            <option value="">كل المواقع</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="reportContent"></div>
+</div>
+
+<!-- ══ DAILY SCHEDULE TAB ══ -->
+<div class="view" id="view-daily">
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">📅 الجدول اليومي</div>
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+        <input type="date" class="finput" id="dailyDate" style="width:auto" onchange="renderDaily()">
+        <button class="btn btn-ops" onclick="openDailyEntryModal()">+ إضافة مدخل</button>
+        <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="dailySummary" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+      <div class="daily-grid" id="dailyGrid"></div>
+      <div id="dailyEmpty" style="display:none;text-align:center;color:var(--muted);padding:32px;font-size:.82rem">
+        <div style="font-size:2rem;margin-bottom:8px">📅</div>
+        لا توجد مدخلات لهذا اليوم — اضغط <strong style="color:var(--ops)">+ إضافة مدخل</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DAILY ENTRY MODAL -->
+<div class="overlay" id="dailyEntryOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeDailyEntryModal()">✕</button>
+    <div class="mtitle" id="deTitle">📅 إضافة مدخل يومي</div>
+    <div class="fr">
+      <label class="flbl">المهندس *</label>
+      <select class="fsel" id="deEngineer"><option value="">— اختر مهندس —</option></select>
+    </div>
+    <div class="fr">
+      <label class="flbl">الموقع *</label>
+      <select class="fsel" id="deSite"><option value="">— اختر موقع —</option></select>
+    </div>
+    <div class="fr2">
+      <div class="fr" style="margin:0">
+        <label class="flbl">التاريخ *</label>
+        <input type="date" class="finput" id="deDate">
+      </div>
+      <div class="fr" style="margin:0">
+        <label class="flbl">رقم الزيارة</label>
+        <input type="number" class="finput" id="deVisitNum" min="1" placeholder="1">
+      </div>
+    </div>
+    <div class="fr">
+      <label class="flbl">ملاحظات</label>
+      <textarea class="ftxt" id="deNotes" placeholder="ملاحظات المهمة اليومية..."></textarea>
+    </div>
+    <button class="sbtn sbtn-ops" onclick="saveDailyEntry()">💾 حفظ</button>
+  </div>
+</div>
+
+</main>
+
+<!-- DATA LOG MODAL -->
+<div class="overlay" id="dataLogOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeDataLogModal()">✕</button>
+    <div class="mtitle" id="dlModalTitle">📒 إضافة ملاحظة للموقع</div>
+    <div class="fr">
+      <label class="flbl">الموقع *</label>
+      <select class="fsel" id="dlModalSite"><option value="">— اختر موقع —</option></select>
+    </div>
+    <div class="fr2">
+      <div class="fr" style="margin:0">
+        <label class="flbl">التاريخ *</label>
+        <input type="date" class="finput" id="dlDate">
+      </div>
+      <div class="fr" style="margin:0">
+        <label class="flbl">نوع الملاحظة</label>
+        <select class="fsel" id="dlType">
+          <option value="note">📝 ملاحظة عامة</option>
+          <option value="issue">🔴 مشكلة / Issue</option>
+          <option value="action">🔵 إجراء مطلوب</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr">
+      <label class="flbl">الملاحظة *</label>
+      <textarea class="ftxt" id="dlNote" placeholder="اكتب الملاحظة هنا..." style="min-height:100px"></textarea>
+    </div>
+    <button class="sbtn sbtn-ops" onclick="saveDataLog()">💾 حفظ الملاحظة</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════
+// CONFIG
+// ════════════════════════════════
+const SB_URL='https://cpbevbjzndfmtvlrwael.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwYmV2Ymp6bmRmbXR2bHJ3YWVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3OTI3ODgsImV4cCI6MjA4ODM2ODc4OH0.XjKAh5d5LthYe1pSu2ecwFl4jOA3I3TDc8DRpSkHHvQ';
+const {createClient}=supabase;
+const db=createClient(SB_URL,SB_KEY);
+
+let sites=[],visits=[],engineers=[],visitEngineers=[],followups=[];
+let attachedFiles=[];
+let msToken=null;
+let sentLog=JSON.parse(localStorage.getItem('sentEmailLog')||'[]');
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+async function init(){
+  await loadData();
+  setupDates();
+  populateDropdowns();
+  renderSentHistory();
+  checkMSAuth();
+  hideLoad();
+}
+
+async function loadData(){
+  const[s,v,e,ve,fu]=await Promise.all([
+    db.from('sites').select('*').eq('is_active',true).order('name'),
+    db.from('visits').select('*').order('scheduled_date',{ascending:false}),
+    db.from('engineers').select('*').eq('is_active',true).order('name'),
+    db.from('visit_engineers').select('*'),
+    db.from('site_followup').select('*').order('note_date',{ascending:false})
+  ]);
+  sites=s.data||[];visits=v.data||[];engineers=e.data||[];
+  visitEngineers=ve.data||[];followups=fu.data||[];
+}
+
+function setupDates(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('dailyDate').value=today;
+  const m=new Date();m.setDate(1);
+  document.getElementById('repFrom').value=m.toISOString().split('T')[0];
+  document.getElementById('repTo').value=today;
+}
+
+function populateDropdowns(){
+  const siteOpts='<option value="">— اختر موقع —</option>'+sites.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  const engOpts='<option value="">— اختر مهندس —</option>'+engineers.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+
+  // Email To
+  document.getElementById('emailTo').innerHTML='<option value="">— اختر العميل —</option>'+
+    sites.filter(s=>s.client_email).map(s=>`<option value="${s.client_email}">${s.client_name||s.name} &lt;${s.client_email}&gt;</option>`).join('');
+
+  // Email site, report site, datalog site, datalog modal site
+  ['emailSite','repSite','dataLogSite','dlModalSite'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.innerHTML=(id==='repSite'?'<option value="">كل المواقع</option>':'<option value="">— اختر موقع —</option>')+
+      sites.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  });
+
+  // Daily entry engineer + site
+  const deEng=document.getElementById('deEngineer');
+  if(deEng) deEng.innerHTML=engOpts;
+  const deSite=document.getElementById('deSite');
+  if(deSite) deSite.innerHTML=siteOpts;
+}
+
+// ════════════════════════════════
+// TABS
+// ════════════════════════════════
+function switchTab(name,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('act'));
+  document.getElementById('view-'+name).classList.add('show');
+  el.classList.add('act');
+  if(name==='report')generateReport();
+  if(name==='daily')renderDaily();
+}
+
+// ════════════════════════════════
+// MS GRAPH AUTH
+// ════════════════════════════════
+function checkMSAuth(){
+  const cfg=JSON.parse(localStorage.getItem('msConfig')||'{}');
+  if(cfg.clientId){
+    document.getElementById('msClientId').value=cfg.clientId;
+    document.getElementById('msTenantId').value=cfg.tenantId||'common';
+  }
+  // Check if we have a token in hash (OAuth redirect)
+  const hash=window.location.hash;
+  if(hash&&hash.includes('access_token')){
+    const params=new URLSearchParams(hash.replace('#',''));
+    msToken=params.get('access_token');
+    localStorage.setItem('msToken',msToken);
+    window.location.hash='';
+    updateAuthStatus(true);
+    showToast('✅ تم تسجيل الدخول بنجاح','t-ok');
+    return;
+  }
+  const saved=localStorage.getItem('msToken');
+  if(saved){msToken=saved;updateAuthStatus(true);}
+  else updateAuthStatus(false);
+}
+
+function updateAuthStatus(ok){
+  const el=document.getElementById('authStatus');
+  const actEl=document.getElementById('authActions');
+  if(ok){
+    el.className='auth-status auth-ok';
+    el.textContent='✅ متصل بـ Outlook — جاهز للإرسال';
+    actEl.innerHTML=`<button class="btn btn-ghost" style="font-size:.7rem" onclick="msLogout()">تسجيل الخروج</button>`;
+  } else {
+    el.className='auth-status auth-warn';
+    el.textContent='⚠️ غير متصل — اضغط "ربط Outlook" للمتابعة';
+    actEl.innerHTML=`<button class="btn btn-blue" onclick="msLogin()">🔗 ربط Outlook</button>`;
+  }
+}
+
+function saveAzureConfig(){
+  const clientId=document.getElementById('msClientId').value.trim();
+  const tenantId=document.getElementById('msTenantId').value.trim()||'common';
+  if(!clientId){showToast('⚠️ أدخل Client ID','t-err');return;}
+  localStorage.setItem('msConfig',JSON.stringify({clientId,tenantId}));
+  showToast('✅ تم حفظ الإعدادات','t-ok');
+}
+
+function msLogin(){
+  const cfg=JSON.parse(localStorage.getItem('msConfig')||'{}');
+  if(!cfg.clientId){
+    showToast('⚠️ احفظ إعدادات Azure أولاً','t-err');
+    document.getElementById('authInfo').style.display='block';
+    return;
+  }
+  const params=new URLSearchParams({
+    client_id:cfg.clientId,
+    response_type:'token',
+    redirect_uri:window.location.href.split('#')[0],
+    scope:'https://graph.microsoft.com/Mail.Send',
+    response_mode:'fragment'
+  });
+  window.location.href=`https://login.microsoftonline.com/${cfg.tenantId||'common'}/oauth2/v2.0/authorize?${params}`;
+}
+
+function msLogout(){
+  msToken=null;
+  localStorage.removeItem('msToken');
+  updateAuthStatus(false);
+  showToast('🚪 تم تسجيل الخروج','t-info');
+}
+
+function toggleAuthInfo(){
+  const el=document.getElementById('authInfo');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+// ════════════════════════════════
+// EMAIL TEMPLATES
+// ════════════════════════════════
+const COMPANY_NAME='[اسم الشركة]';
+const SENDER_NAME='[اسمك]';
+const SENDER_TITLE='[المسمى الوظيفي]';
+
+function loadTemplate(type){
+  const siteId=document.getElementById('emailSite').value;
+  const site=sites.find(s=>s.id===siteId);
+  const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+
+  if(type==='visit_report'){
+    const siteVisits=siteId?visits.filter(v=>v.site_id===siteId):[];
+    const done=siteVisits.filter(v=>v.status==='completed').length;
+    const upcoming=siteVisits.filter(v=>v.status==='scheduled').sort((a,b)=>new Date(a.scheduled_date)-new Date(b.scheduled_date));
+    const lastVisit=siteVisits.filter(v=>v.status==='completed').sort((a,b)=>new Date(b.actual_date||b.scheduled_date)-new Date(a.actual_date||a.scheduled_date))[0];
+
+    document.getElementById('emailSubject').value=`Site Visit Report — ${site?.name||'[Site Name]'} — ${today}`;
+    document.getElementById('emailBody').value=
+`Dear ${site?.client_name||'[Client Name]'},
+
+I hope this message finds you well.
+
+Please find below a summary of our recent site visit to ${site?.name||'[Site Name]'}.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VISIT SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Site Name     : ${site?.name||'[Site Name]'}
+Visit Date    : ${lastVisit?.actual_date||lastVisit?.scheduled_date||'[Date]'}
+Visit No.     : ${lastVisit?.visit_number||'[#]'} of ${site?.agreed_visits||'[Total]'}
+Completed     : ${done} visit(s)
+Remaining     : ${Math.max(0,(site?.agreed_visits||0)-done)} visit(s)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OBSERVATIONS & FINDINGS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${lastVisit?.general_notes||'[Please add visit observations here]'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEXT SCHEDULED VISIT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${upcoming[0]?`Scheduled Date : ${upcoming[0].scheduled_date}\nVisit No.     : ${upcoming[0].visit_number||'TBD'}`:'To be scheduled'}
+
+Should you have any questions or require further information, please do not hesitate to contact us.
+
+Best regards,
+
+${SENDER_NAME}
+${SENDER_TITLE}
+${COMPANY_NAME}`;
+  }
+
+  else if(type==='followup'){
+    const siteFU=siteId?followups.filter(f=>f.site_id===siteId).slice(0,5):[];
+    document.getElementById('emailSubject').value=`Follow-Up Meeting Notes — ${site?.name||'[Site Name]'} — ${today}`;
+    document.getElementById('emailBody').value=
+`Dear ${site?.client_name||'[Client Name]'},
+
+I hope this email finds you well.
+
+Following our recent follow-up discussion regarding ${site?.name||'[Site Name]'}, please find below a summary of the key points discussed:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FOLLOW-UP NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${siteFU.length?siteFU.map((f,i)=>`${i+1}. [${f.note_date}] ${f.note}`).join('\n'):'[Add follow-up notes here]'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ACTION ITEMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• [Action item 1 — Responsible party — Due date]
+• [Action item 2 — Responsible party — Due date]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEXT STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Describe next steps or upcoming visit plan]
+
+Please confirm receipt and advise if any corrections are needed.
+
+Best regards,
+
+${SENDER_NAME}
+${SENDER_TITLE}
+${COMPANY_NAME}`;
+  }
+
+  else if(type==='trend'){
+    const siteId=document.getElementById('emailSite').value;
+    const site=sites.find(s=>s.id===siteId);
+    const siteVisits=siteId?visits.filter(v=>v.site_id===siteId):[];
+    const done=siteVisits.filter(v=>v.status==='completed').length;
+    const postponed=siteVisits.filter(v=>v.status==='postponed').length;
+    const pct=site?.agreed_visits?Math.round(done/site.agreed_visits*100):0;
+    document.getElementById('emailSubject').value=`Performance Trend Report — ${site?.name||'[Site Name]'} — ${today}`;
+    document.getElementById('emailBody').value=
+`Dear ${site?.client_name||'[Client Name]'},
+
+Please find below the performance trend analysis for ${site?.name||'[Site Name]'}.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PERFORMANCE TREND SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Site Name          : ${site?.name||'[Site Name]'}
+Report Date        : ${today}
+Contract Period    : ${site?.contract_start||'—'} to ${site?.contract_end||'—'}
+
+VISIT STATISTICS
+─────────────────
+Agreed Visits      : ${site?.agreed_visits||'—'}
+Completed Visits   : ${done}
+Postponed Visits   : ${postponed}
+Completion Rate    : ${pct}%
+
+TREND ANALYSIS
+─────────────────
+Overall Performance : ${pct>=80?'✅ On Track':pct>=50?'⚠️ Moderate':'❌ Needs Attention'}
+
+[Add trend observations, graphs description, or key performance indicators here]
+
+KEY OBSERVATIONS
+─────────────────
+1. [Observation 1]
+2. [Observation 2]
+3. [Observation 3]
+
+RECOMMENDATIONS
+─────────────────
+• [Recommendation based on trend data]
+• [Areas requiring improvement]
+
+Please review and revert with any comments.
+
+Best regards,
+
+${SENDER_NAME}
+${SENDER_TITLE}
+${COMPANY_NAME}`;
+  }
+
+  else if(type==='risk'){
+    const siteId=document.getElementById('emailSite').value;
+    const site=sites.find(s=>s.id===siteId);
+    document.getElementById('emailSubject').value=`Risk Assessment Report — ${site?.name||'[Site Name]'} — ${today}`;
+    document.getElementById('emailBody').value=
+`Dear ${site?.client_name||'[Client Name]'},
+
+As part of our ongoing quality assurance process, please find below the risk assessment report for ${site?.name||'[Site Name]'}.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RISK ASSESSMENT REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Site Name     : ${site?.name||'[Site Name]'}
+Report Date   : ${today}
+Assessed By   : ${SENDER_NAME}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IDENTIFIED RISKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┌─────────────────────┬──────────┬────────────┬──────────────────────┐
+│ Risk Description    │ Severity │ Likelihood │ Mitigation Action    │
+├─────────────────────┼──────────┼────────────┼──────────────────────┤
+│ [Risk Item 1]       │ High     │ Medium     │ [Action]             │
+│ [Risk Item 2]       │ Medium   │ Low        │ [Action]             │
+│ [Risk Item 3]       │ Low      │ High       │ [Action]             │
+└─────────────────────┴──────────┴────────────┴──────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL ISSUES REQUIRING IMMEDIATE ACTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. [Critical Issue 1] — Deadline: [Date]
+2. [Critical Issue 2] — Deadline: [Date]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CORRECTIVE ACTIONS TAKEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• [Action already taken]
+• [Planned corrective measure]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEXT REVIEW DATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Date of next risk review]
+
+This report is confidential and intended solely for the addressee.
+Please acknowledge receipt and confirm the proposed corrective actions.
+
+Best regards,
+
+${SENDER_NAME}
+${SENDER_TITLE}
+${COMPANY_NAME}`;
+  }
+
+  else if(type==='schedule'){
+    const today2=new Date();
+    const month=today2.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+    document.getElementById('emailSubject').value=`Monthly Visit Schedule — ${month}`;
+    document.getElementById('emailBody').value=
+`Dear Team / Dear ${site?.client_name||'[Client]'},
+
+Please find below the confirmed visit schedule for ${month}.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VISIT SCHEDULE — ${month.toUpperCase()}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Paste schedule table here or attach as Excel]
+
+Please note that all visits are subject to change with prior notice.
+For any rescheduling requests, kindly contact us at least 48 hours in advance.
+
+Best regards,
+
+${SENDER_NAME}
+${SENDER_TITLE}
+${COMPANY_NAME}`;
+  }
+
+  showToast('📋 تم تحميل القالب','t-info');
+}
+
+function onSiteSelect(){
+  const siteId=document.getElementById('emailSite').value;
+  const site=sites.find(s=>s.id===siteId);
+  if(site?.client_email) document.getElementById('emailTo').value=site.client_email;
+}
+
+// ════════════════════════════════
+// ATTACHMENTS
+// ════════════════════════════════
+function handleAttach(e){
+  const files=Array.from(e.target.files);
+  attachedFiles=[...attachedFiles,...files];
+  renderAttachList();
+  document.getElementById('attachInput').value='';
+}
+
+function renderAttachList(){
+  document.getElementById('attachList').innerHTML=attachedFiles.map((f,i)=>`
+    <div class="attach-item">
+      <div><span class="attach-name">📎 ${f.name}</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="attach-size">${(f.size/1024).toFixed(1)} KB</span>
+        <button class="attach-del" onclick="removeAttach(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+function removeAttach(i){attachedFiles.splice(i,1);renderAttachList();}
+
+// ════════════════════════════════
+// SEND EMAIL
+// ════════════════════════════════
+async function sendEmail(){
+  const toSelect=document.getElementById('emailTo').value;
+  const toCustom=document.getElementById('emailToCustom').value.trim();
+  const to=toCustom||toSelect;
+  const subject=document.getElementById('emailSubject').value.trim();
+  const body=document.getElementById('emailBody').value.trim();
+  const cc=document.getElementById('emailCC').value.trim();
+
+  if(!to){showToast('⚠️ أدخل إيميل المستلم','t-err');return;}
+  if(!subject){showToast('⚠️ أدخل الموضوع','t-err');return;}
+  if(!body){showToast('⚠️ أدخل نص الإيميل','t-err');return;}
+
+  if(!msToken){
+    showToast('⚠️ سجّل الدخول بـ Outlook أولاً','t-err');
+    return;
+  }
+
+  // Show progress
+  const prog=document.getElementById('sendProgress');
+  const fill=document.getElementById('progFill');
+  prog.classList.add('show');
+  fill.style.width='30%';
+
+  // Build attachments
+  const attachments=await Promise.all(attachedFiles.map(async f=>{
+    const b64=await fileToBase64(f);
+    return {
+      "@odata.type":"#microsoft.graph.fileAttachment",
+      name:f.name,contentType:f.type,contentBytes:b64.split(',')[1]
+    };
+  }));
+
+  fill.style.width='60%';
+
+  // Build Graph API payload
+  const toAddresses=to.split(',').map(e=>({emailAddress:{address:e.trim()}}));
+  const ccAddresses=cc?cc.split(',').map(e=>({emailAddress:{address:e.trim()}})):[];
+
+  const message={
+    subject,
+    body:{contentType:'Text',content:body},
+    toRecipients:toAddresses,
+    ccRecipients:ccAddresses,
+    attachments
+  };
+
+  try{
+    const res=await fetch('https://graph.microsoft.com/v1.0/me/sendMail',{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${msToken}`,'Content-Type':'application/json'},
+      body:JSON.stringify({message,saveToSentItems:true})
+    });
+    fill.style.width='100%';
+    if(res.ok||res.status===202){
+      // Save to local log
+      const log={id:Date.now(),to,cc,subject,date:new Date().toLocaleString('ar-EG'),attachCount:attachedFiles.length};
+      sentLog.unshift(log);
+      localStorage.setItem('sentEmailLog',JSON.stringify(sentLog.slice(0,50)));
+      setTimeout(()=>prog.classList.remove('show'),800);
+      showToast('✅ تم الإرسال بنجاح','t-ok');
+      renderSentHistory();
+      attachedFiles=[];renderAttachList();
+    } else {
+      const err=await res.json();
+      if(err.error?.code==='InvalidAuthenticationToken'){
+        msToken=null;localStorage.removeItem('msToken');updateAuthStatus(false);
+        showToast('❌ انتهت الجلسة — سجّل دخول مرة تانية','t-err');
+      } else {
+        showToast('❌ '+( err.error?.message||'خطأ في الإرسال'),'t-err');
+      }
+      prog.classList.remove('show');
+    }
+  } catch(e){
+    prog.classList.remove('show');
+    showToast('❌ خطأ في الاتصال: '+e.message,'t-err');
+  }
+}
+
+function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);
+  });
+}
+
+function renderSentHistory(){
+  const el=document.getElementById('sentHistory');
+  if(!sentLog.length){el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:.76rem;padding:16px">لا توجد إيميلات مرسلة بعد</div>';return;}
+  el.innerHTML=sentLog.slice(0,10).map(l=>`
+    <div style="background:var(--s2);border-radius:8px;padding:10px 13px;border-right:3px solid var(--ops)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:.78rem;font-weight:700">${l.subject}</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:2px">إلى: ${l.to} ${l.cc?'· CC: '+l.cc:''}</div>
+          ${l.attachCount?`<div style="font-size:.62rem;color:var(--dim)">📎 ${l.attachCount} مرفق</div>`:''}
+        </div>
+        <div style="font-size:.62rem;color:var(--muted);white-space:nowrap;margin-right:10px">${l.date}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════
+// FOLLOW-UP REPORT
+// ════════════════════════════════
+async function generateReport(){
+  const from=document.getElementById('repFrom').value;
+  const to=document.getElementById('repTo').value;
+  const siteFilter=document.getElementById('repSite').value;
+  const el=document.getElementById('reportContent');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted)">⏳ جاري إنشاء التقرير...</div>';
+
+  let siteList=siteFilter?sites.filter(s=>s.id===siteFilter):sites;
+  const today=new Date().toISOString().split('T')[0];
+
+  const html=siteList.map(site=>{
+    const sVisits=visits.filter(v=>v.site_id===site.id);
+    const done=sVisits.filter(v=>v.status==='completed').length;
+    const postponed=sVisits.filter(v=>v.status==='postponed').length;
+    const cancelled=sVisits.filter(v=>v.status==='cancelled').length;
+    const upcoming=sVisits.filter(v=>v.status==='scheduled'&&v.scheduled_date>=today)
+      .sort((a,b)=>new Date(a.scheduled_date)-new Date(b.scheduled_date));
+    const siteFU=followups.filter(f=>f.site_id===site.id&&(!from||f.note_date>=from)&&(!to||f.note_date<=to))
+      .sort((a,b)=>new Date(b.note_date)-new Date(a.note_date));
+    const remaining=Math.max(0,site.agreed_visits-done);
+    const pct=site.agreed_visits?Math.round(done/site.agreed_visits*100):0;
+
+    return `<div class="site-report-card">
+      <div class="src-header">
+        <div>
+          <div class="src-name">${site.name}</div>
+          <div style="font-size:.66rem;color:var(--muted);margin-top:2px">📍 ${site.region||''} ${site.address?'— '+site.address:''} &nbsp;·&nbsp; 👤 ${site.client_name||'—'}</div>
+        </div>
+        <div class="src-badges">
+          <span class="badge b-done">${done} مكتملة</span>
+          ${postponed?`<span class="badge b-post">${postponed} مؤجلة</span>`:''}
+          ${cancelled?`<span class="badge b-cancel">${cancelled} ملغية</span>`:''}
+          <span class="badge b-pend">${remaining} متبقية</span>
+        </div>
+      </div>
+      <div class="src-grid">
+        <div class="src-stat"><div class="src-stat-val" style="color:var(--ops)">${done}</div><div class="src-stat-lbl">زيارات منجزة</div></div>
+        <div class="src-stat"><div class="src-stat-val" style="color:var(--blue)">${site.agreed_visits}</div><div class="src-stat-lbl">إجمالي متفق عليه</div></div>
+        <div class="src-stat"><div class="src-stat-val" style="color:var(--qual)">${remaining}</div><div class="src-stat-lbl">متبقية</div></div>
+        <div class="src-stat"><div class="src-stat-val" style="color:${pct>=80?'var(--ops)':pct>=50?'var(--qual)':'var(--red)'}">${pct}%</div><div class="src-stat-lbl">نسبة الإنجاز</div></div>
+      </div>
+      ${upcoming.length?`
+        <div style="font-size:.66rem;font-weight:700;color:var(--blue);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">📅 الزيارات القادمة</div>
+        ${upcoming.slice(0,3).map(v=>{
+          const engIds=visitEngineers.filter(ve=>ve.visit_id===v.id).map(ve=>ve.engineer_id);
+          const engNames=engIds.map(eid=>(engineers.find(e=>e.id===eid)||{}).name||'').filter(Boolean);
+          return `<div class="upcoming-visit">📅 <strong>${v.scheduled_date}</strong> ${v.visit_number?`· زيارة #${v.visit_number}`:''} ${engNames.length?`· 👷 ${engNames.join('، ')}`:''}</div>`;
+        }).join('')}
+      `:''}
+      ${siteFU.length?`
+        <div style="font-size:.66rem;font-weight:700;color:var(--muted);margin:10px 0 6px;text-transform:uppercase;letter-spacing:.5px">📝 ملاحظات الفولو أب</div>
+        ${siteFU.slice(0,5).map(f=>`<div class="followup-note"><div class="fn-date">📅 ${f.note_date}</div>${f.note}</div>`).join('')}
+        ${siteFU.length>5?`<div style="font-size:.65rem;color:var(--muted);margin-top:4px">+ ${siteFU.length-5} ملاحظات أخرى...</div>`:''}
+      `:'<div style="font-size:.72rem;color:var(--muted);padding:8px 0">لا توجد ملاحظات فولو أب في هذه الفترة</div>'}
+      ${postponed?`
+        <div style="font-size:.66rem;font-weight:700;color:var(--qual);margin:10px 0 6px;text-transform:uppercase;letter-spacing:.5px">⏰ الزيارات المؤجلة</div>
+        ${sVisits.filter(v=>v.status==='postponed').map(v=>`<div style="background:var(--s3);border-radius:6px;padding:6px 10px;margin-bottom:4px;font-size:.72rem"><strong>${v.scheduled_date}</strong>${v.postpone_reason?` — ${v.postpone_reason}`:''}</div>`).join('')}
+      `:''}
+    </div>`;
+  }).join('');
+
+  const reportDate=new Date().toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'});
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:.85rem;font-weight:800">تقرير الفولو أب الشامل</div>
+          <div style="font-size:.68rem;color:var(--muted)">الفترة: ${from||'كل الوقت'} — ${to||'اليوم'} &nbsp;·&nbsp; عدد المواقع: ${siteList.length}</div>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted)">تاريخ التقرير: ${reportDate}</div>
+      </div>
+    </div>
+    <div class="report-section">${html||'<div style="text-align:center;color:var(--muted);padding:32px">لا توجد بيانات</div>'}</div>`;
+}
+
+// ════════════════════════════════
+// DAILY SCHEDULE
+// ════════════════════════════════
+// ════════════════════════════════
+// DAILY SCHEDULE CRUD
+// ════════════════════════════════
+let editDailyId=null;
+
+function openDailyEntryModal(visitId=null){
+  editDailyId=visitId;
+  const date=document.getElementById('dailyDate').value;
+  document.getElementById('deDate').value=date||new Date().toISOString().split('T')[0];
+  document.getElementById('deVisitNum').value='';
+  document.getElementById('deNotes').value='';
+  document.getElementById('deEngineer').value='';
+  document.getElementById('deSite').value='';
+  document.getElementById('deTitle').textContent=visitId?'✏️ تعديل المدخل':'📅 إضافة مدخل يومي';
+  if(visitId){
+    const v=visits.find(x=>x.id===visitId);
+    if(v){
+      document.getElementById('deSite').value=v.site_id||'';
+      document.getElementById('deDate').value=v.scheduled_date||'';
+      document.getElementById('deVisitNum').value=v.visit_number||'';
+      document.getElementById('deNotes').value=v.general_notes||'';
+      const firstEng=visitEngineers.find(ve=>ve.visit_id===visitId);
+      if(firstEng) document.getElementById('deEngineer').value=firstEng.engineer_id;
+    }
+  }
+  document.getElementById('dailyEntryOverlay').classList.add('open');
+}
+
+function closeDailyEntryModal(){document.getElementById('dailyEntryOverlay').classList.remove('open');editDailyId=null;}
+document.getElementById('dailyEntryOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('dailyEntryOverlay'))closeDailyEntryModal();});
+
+async function saveDailyEntry(){
+  const siteId=document.getElementById('deSite').value;
+  const engId=document.getElementById('deEngineer').value;
+  const date=document.getElementById('deDate').value;
+  if(!siteId||!date){showToast('⚠️ اختر الموقع والتاريخ','t-err');return;}
+  const payload={site_id:siteId,scheduled_date:date,status:'scheduled',
+    visit_number:parseInt(document.getElementById('deVisitNum').value)||null,
+    general_notes:document.getElementById('deNotes').value.trim()};
+  let vId=editDailyId;
+  if(editDailyId){
+    const{error}=await db.from('visits').update(payload).eq('id',editDailyId);
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+  } else {
+    const{data,error}=await db.from('visits').insert([payload]).select().single();
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+    vId=data.id;
+  }
+  if(engId){
+    await db.from('visit_engineers').delete().eq('visit_id',vId);
+    await db.from('visit_engineers').insert([{visit_id:vId,engineer_id:engId}]);
+  }
+  closeDailyEntryModal();
+  await loadData();renderDaily();
+  showToast(editDailyId?'✅ تم التعديل':'✅ تم الإضافة','t-ok');
+}
+
+async function deleteDailyEntry(visitId){
+  if(!confirm('حذف هذا المدخل؟'))return;
+  await db.from('visit_engineers').delete().eq('visit_id',visitId);
+  await db.from('visits').delete().eq('id',visitId);
+  await loadData();renderDaily();
+  showToast('🗑️ تم الحذف','t-ok');
+}
+
+function renderDaily(){
+  const date=document.getElementById('dailyDate').value;
+  if(!date)return;
+  const dayVisits=visits.filter(v=>v.scheduled_date===date&&v.status==='scheduled');
+  const grid=document.getElementById('dailyGrid');
+  const empty=document.getElementById('dailyEmpty');
+  const summary=document.getElementById('dailySummary');
+
+  const totalVisits=dayVisits.length;
+  const engSet=new Set();
+  dayVisits.forEach(v=>{visitEngineers.filter(ve=>ve.visit_id===v.id).forEach(ve=>engSet.add(ve.engineer_id));});
+  summary.innerHTML=[
+    {val:totalVisits,lbl:'مدخل مجدول',color:'var(--blue)'},
+    {val:engSet.size,lbl:'مهندس مشارك',color:'var(--ops)'}
+  ].map(s=>`<div style="background:var(--s);border:1px solid var(--border);border-radius:9px;padding:10px 16px;display:flex;align-items:center;gap:10px">
+    <div style="font-size:1.3rem;font-weight:900;color:${s.color}">${s.val}</div>
+    <div style="font-size:.68rem;color:var(--muted)">${s.lbl}</div>
+  </div>`).join('');
+
+  if(!dayVisits.length){grid.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+
+  // Group by engineer
+  const engVisits={};
+  dayVisits.forEach(v=>{
+    const veList=visitEngineers.filter(ve=>ve.visit_id===v.id);
+    if(!veList.length){if(!engVisits['_none'])engVisits['_none']=[];engVisits['_none'].push(v);}
+    veList.forEach(ve=>{if(!engVisits[ve.engineer_id])engVisits[ve.engineer_id]=[];engVisits[ve.engineer_id].push(v);});
+  });
+
+  grid.innerHTML=Object.entries(engVisits).map(([engId,evs])=>{
+    const eng=engineers.find(e=>e.id===engId);
+    const name=eng?.name||'غير محدد';
+    return `<div class="daily-card">
+      <div class="dc-hdr">
+        <div class="dc-avatar">${name[0]||'?'}</div>
+        <div style="flex:1"><div class="dc-name">👷 ${name}</div><div class="dc-count">${evs.length} مدخل اليوم</div></div>
+      </div>
+      <div class="dc-body">
+        ${evs.map(v=>{
+          const site=sites.find(s=>s.id===v.site_id);
+          return `<div class="dc-visit" style="position:relative">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between">
+              <div>
+                <div class="dc-site-name">🏢 ${site?.name||'—'}</div>
+                <div class="dc-site-meta">📍 ${site?.region||''} ${site?.address?'— '+site.address:''}</div>
+                ${v.visit_number?`<div style="font-size:.62rem;color:var(--ops);margin-top:2px">زيارة رقم ${v.visit_number}</div>`:''}
+                ${v.general_notes?`<div style="font-size:.65rem;color:var(--dim);margin-top:3px">📝 ${v.general_notes}</div>`:''}
+              </div>
+              <div style="display:flex;gap:3px;flex-shrink:0;margin-right:6px">
+                <button onclick="openDailyEntryModal('${v.id}')" style="width:22px;height:22px;border-radius:5px;border:none;background:var(--s3);color:var(--muted);cursor:pointer;font-size:.65rem;display:flex;align-items:center;justify-content:center" title="تعديل">✏️</button>
+                <button onclick="deleteDailyEntry('${v.id}')" style="width:22px;height:22px;border-radius:5px;border:none;background:var(--rdg);color:var(--red);cursor:pointer;font-size:.65rem;display:flex;align-items:center;justify-content:center" title="حذف">🗑️</button>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════
+// DATA LOG
+// ════════════════════════════════
+let editDlId=null;
+
+function openDataLogModal(id=null){
+  editDlId=id;
+  document.getElementById('dlDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('dlNote').value='';
+  document.getElementById('dlType').value='note';
+  document.getElementById('dlModalSite').value=document.getElementById('dataLogSite').value||'';
+  if(id){
+    const{data:existing}=followups.find?.(f=>f.id===id)||{};
+  }
+  document.getElementById('dlModalTitle').textContent=id?'✏️ تعديل الملاحظة':'📒 إضافة ملاحظة للموقع';
+  document.getElementById('dataLogOverlay').classList.add('open');
+}
+function closeDataLogModal(){document.getElementById('dataLogOverlay').classList.remove('open');editDlId=null;}
+document.getElementById('dataLogOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('dataLogOverlay'))closeDataLogModal();});
+
+async function saveDataLog(){
+  const siteId=document.getElementById('dlModalSite').value;
+  const note=document.getElementById('dlNote').value.trim();
+  const date=document.getElementById('dlDate').value;
+  const type=document.getElementById('dlType').value;
+  if(!siteId||!note){showToast('⚠️ اختر الموقع واكتب الملاحظة','t-err');return;}
+  const payload={site_id:siteId,note:`[${type}] ${note}`,note_date:date};
+  if(editDlId){
+    const{error}=await db.from('site_followup').update(payload).eq('id',editDlId);
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+  } else {
+    const{error}=await db.from('site_followup').insert([payload]);
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+  }
+  closeDataLogModal();
+  await loadData();
+  document.getElementById('dataLogSite').value=siteId;
+  await loadDataLog();
+  showToast('📒 تم حفظ الملاحظة','t-ok');
+}
+
+async function loadDataLog(){
+  const siteId=document.getElementById('dataLogSite').value;
+  const el=document.getElementById('dataLogContent');
+  if(!siteId){el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:.76rem;padding:20px">اختر موقع لعرض الـ Data Log</div>';return;}
+  const site=sites.find(s=>s.id===siteId);
+  const siteLogs=followups.filter(f=>f.site_id===siteId).sort((a,b)=>new Date(b.note_date)-new Date(a.note_date));
+  if(!siteLogs.length){
+    el.innerHTML=`<div style="text-align:center;color:var(--muted);font-size:.76rem;padding:20px">لا توجد ملاحظات لـ <strong style="color:var(--text)">${site?.name}</strong> — اضغط + إضافة ملاحظة</div>`;
+    return;
+  }
+  const typeMap={note:{cls:'dl-tag-note',icon:'📝',label:'ملاحظة'},issue:{cls:'dl-tag-issue',icon:'🔴',label:'مشكلة'},action:{cls:'dl-tag-action',icon:'🔵',label:'إجراء'}};
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:.8rem;font-weight:700">${site?.name} — <span style="color:var(--muted)">${siteLogs.length} ملاحظة</span></div>
+      <div style="display:flex;gap:5px">
+        <span style="font-size:.62rem;padding:2px 8px;border-radius:4px;background:var(--og);color:var(--ops)">${siteLogs.filter(f=>f.note.includes('[note]')).length} ملاحظة</span>
+        <span style="font-size:.62rem;padding:2px 8px;border-radius:4px;background:var(--rdg);color:var(--red)">${siteLogs.filter(f=>f.note.includes('[issue]')).length} مشكلة</span>
+        <span style="font-size:.62rem;padding:2px 8px;border-radius:4px;background:var(--blg);color:#60a5fa">${siteLogs.filter(f=>f.note.includes('[action]')).length} إجراء</span>
+      </div>
+    </div>
+    ${siteLogs.map(f=>{
+      let typeKey='note',cleanNote=f.note;
+      if(f.note.startsWith('[issue]')){typeKey='issue';cleanNote=f.note.replace('[issue]','').trim();}
+      else if(f.note.startsWith('[action]')){typeKey='action';cleanNote=f.note.replace('[action]','').trim();}
+      else if(f.note.startsWith('[note]')){cleanNote=f.note.replace('[note]','').trim();}
+      const t=typeMap[typeKey];
+      return `<div class="dl-entry">
+        <div class="dl-date">
+          <span><span class="dl-tag ${t.cls}">${t.icon} ${t.label}</span>📅 ${f.note_date}</span>
+          <div class="dl-actions">
+            <button onclick="editDataLog('${f.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:2px 5px" title="تعديل">✏️</button>
+            <button onclick="deleteDataLog('${f.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.75rem;padding:2px 5px" title="حذف">🗑️</button>
+          </div>
+        </div>
+        <div class="dl-text">${cleanNote}</div>
+      </div>`;
+    }).join('')}`;
+}
+
+function editDataLog(id){
+  const f=followups.find(x=>x.id===id);
+  if(!f)return;
+  editDlId=id;
+  let typeKey='note',cleanNote=f.note;
+  if(f.note.startsWith('[issue]')){typeKey='issue';cleanNote=f.note.replace('[issue]','').trim();}
+  else if(f.note.startsWith('[action]')){typeKey='action';cleanNote=f.note.replace('[action]','').trim();}
+  else if(f.note.startsWith('[note]')){cleanNote=f.note.replace('[note]','').trim();}
+  document.getElementById('dlModalSite').value=f.site_id;
+  document.getElementById('dlDate').value=f.note_date;
+  document.getElementById('dlType').value=typeKey;
+  document.getElementById('dlNote').value=cleanNote;
+  document.getElementById('dlModalTitle').textContent='✏️ تعديل الملاحظة';
+  document.getElementById('dataLogOverlay').classList.add('open');
+}
+
+async function deleteDataLog(id){
+  if(!confirm('حذف هذه الملاحظة؟'))return;
+  const{error}=await db.from('site_followup').delete().eq('id',id);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  await loadData();await loadDataLog();
+  showToast('🗑️ تم الحذف','t-ok');
+}
+
+// ════════════════════════════════
+// TREND & RISK TEMPLATES
+// ════════════════════════════════
+// (injected into existing loadTemplate function)
+
+// ════════════════════════════════
+// UTILS
+// ════════════════════════════════
+function showToast(msg,cls='t-ok'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${cls} show`;setTimeout(()=>t.classList.remove('show'),3200);}
+function hideLoad(){const el=document.getElementById('loadOv');if(!el)return;el.classList.add('hide');setTimeout(()=>{if(el.parentNode)el.remove();},400);}
+
+init();
+</script>
+</body>
+</html>
