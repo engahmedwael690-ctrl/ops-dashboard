@@ -600,7 +600,15 @@ async function saveSite(){
     contract_end:document.getElementById('sEnd').value||null,notes:document.getElementById('sNotes').value.trim()};
   const{error}=editSiteId ? await db.from('sites').update(payload).eq('id',editSiteId) : await db.from('sites').insert([payload]);
   if(error){showToast('❌ '+error.message,'t-err');return;}
-  closeSiteModal();await loadAll();showToast(editSiteId?'✅ تم التحديث':'✅ تم إضافة الموقع','t-ok');
+  if(editSiteId){
+    const _si=allSites.findIndex(x=>x.id===editSiteId);
+    if(_si>-1) allSites[_si]={...allSites[_si],...payload};
+    sites=allSites;
+    closeSiteModal();renderSites();
+    showToast('✅ تم التحديث','t-ok');
+  } else {
+    closeSiteModal();await loadAll();showToast('✅ تم إضافة الموقع','t-ok');
+  }
 }
 
 async function openSiteDetail(id){
@@ -783,12 +791,17 @@ async function saveVisit(){
   if(selEngs.length){
     await db.from('visit_engineers').insert(selEngs.map(eid=>({visit_id:vId,engineer_id:eid})));
   }
-  closeVisitModal();await loadAll();showToast('✅ تم حفظ الزيارة','t-ok');
+  closeVisitModal();
+  await loadAll(); // visits need re-render with engineer names
+  showToast('✅ تم حفظ الزيارة','t-ok');
 }
 
 async function completeVisit(id){
+  const _cv=allVisits.find(x=>x.id===id);
+  if(_cv){_cv.status='completed';_cv.actual_date=new Date().toISOString().split('T')[0];}
+  visits=allVisits;renderVisits();renderSchedule();
+  showToast('✅ تم إتمام الزيارة','t-ok');
   await db.from('visits').update({status:'completed',actual_date:new Date().toISOString().split('T')[0]}).eq('id',id);
-  await loadAll();showToast('✅ تم إتمام الزيارة','t-ok');
 }
 
 // Postpone
@@ -799,8 +812,13 @@ document.getElementById('postponeOverlay').addEventListener('click',e=>{if(e.tar
 async function savePostpone(){
   const reason=document.getElementById('pReason').value.trim();
   if(!reason){showToast('⚠️ اكتب سبب التأجيل','t-err');return;}
-  await db.from('visits').update({status:'postponed',postpone_reason:reason,postponed_to:document.getElementById('pNewDate').value||null}).eq('id',postponeId);
-  closePostpone();await loadAll();showToast('⏰ تم التأجيل','t-info');
+  const _newDate=document.getElementById('pNewDate').value||null;
+  const{error:_pe}=await db.from('visits').update({status:'postponed',postpone_reason:reason,postponed_to:_newDate}).eq('id',postponeId);
+  if(_pe){showToast('❌ '+_pe.message,'t-err');return;}
+  const _pv=allVisits.find(x=>x.id===postponeId);
+  if(_pv){_pv.status='postponed';_pv.postpone_reason=reason;_pv.postponed_to=_newDate;}
+  visits=allVisits;closePostpone();renderVisits();renderSchedule();
+  showToast('⏰ تم التأجيل','t-info');
 }
 
 // Cancel
@@ -811,8 +829,12 @@ document.getElementById('cancelOverlay').addEventListener('click',e=>{if(e.targe
 async function saveCancel(){
   const reason=document.getElementById('cReason').value.trim();
   if(!reason){showToast('⚠️ اكتب سبب الإلغاء','t-err');return;}
-  await db.from('visits').update({status:'cancelled',cancel_reason:reason}).eq('id',cancelId);
-  closeCancel();await loadAll();showToast('❌ تم الإلغاء','t-info');
+  const{error:_ce}=await db.from('visits').update({status:'cancelled',cancel_reason:reason}).eq('id',cancelId);
+  if(_ce){showToast('❌ '+_ce.message,'t-err');return;}
+  const _canv=allVisits.find(x=>x.id===cancelId);
+  if(_canv){_canv.status='cancelled';_canv.cancel_reason=reason;}
+  visits=allVisits;closeCancel();renderVisits();renderSchedule();
+  showToast('❌ تم الإلغاء','t-info');
 }
 
 // Rating
@@ -844,7 +866,7 @@ async function saveRatings(){
     db.from('visit_engineers').update({rating,rating_notes:document.getElementById(`rnotes-${engId}`)?.value||''}).eq('visit_id',ratingVisitId).eq('engineer_id',engId)
   );
   await Promise.all(updates);
-  closeRating();await loadAll();showToast('⭐ تم حفظ التقييم','t-ok');
+  closeRating();showToast('⭐ تم حفظ التقييم','t-ok');
 }
 
 // Notes
@@ -860,8 +882,14 @@ function openNotesModal(id){
 function closeNotes(){document.getElementById('notesOverlay').classList.remove('open');notesVisitId=null;}
 document.getElementById('notesOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('notesOverlay'))closeNotes();});
 async function saveNotes(){
-  await db.from('visits').update({general_notes:document.getElementById('nVisitNotes').value,followup_notes:document.getElementById('nFollowup').value}).eq('id',notesVisitId);
-  closeNotes();await loadAll();showToast('📝 تم حفظ الملاحظات','t-ok');
+  const _gn=document.getElementById('nVisitNotes').value;
+  const _fn=document.getElementById('nFollowup').value;
+  const{error:_ne}=await db.from('visits').update({general_notes:_gn,followup_notes:_fn}).eq('id',notesVisitId);
+  if(_ne){showToast('❌ '+_ne.message,'t-err');return;}
+  const _nv=allVisits.find(x=>x.id===notesVisitId);
+  if(_nv){_nv.general_notes=_gn;_nv.followup_notes=_fn;}
+  visits=allVisits;closeNotes();renderVisits();
+  showToast('📝 تم حفظ الملاحظات','t-ok');
 }
 
 // Photos
@@ -950,7 +978,15 @@ async function saveEngineer(){
   const payload={name,specialty:document.getElementById('eSpec').value.trim(),phone:document.getElementById('ePhone').value.trim(),email:document.getElementById('eEmail').value.trim(),address:document.getElementById('eAddr').value.trim()};
   const{error}=editEngId?await db.from('engineers').update(payload).eq('id',editEngId):await db.from('engineers').insert([payload]);
   if(error){showToast('❌ '+error.message,'t-err');return;}
-  closeEngModal();await loadAll();showToast('✅ تم حفظ المهندس','t-ok');
+  if(editEngId){
+    const _ei=allEngineers.findIndex(x=>x.id===editEngId);
+    if(_ei>-1) allEngineers[_ei]={...allEngineers[_ei],...payload};
+    engineers=allEngineers;
+    closeEngModal();renderEngineers();renderScores();populateEngSelector();
+    showToast('✅ تم تحديث المهندس','t-ok');
+  } else {
+    closeEngModal();await loadAll();showToast('✅ تم إضافة المهندس','t-ok');
+  }
 }
 
 // ════════════════════════════════
@@ -1291,7 +1327,10 @@ async function convertPrediction(siteId, date, visitNum){
     visit_number:visitNum
   }]).select().single();
   if(error){showToast('❌ '+error.message,'t-err');return;}
-  await loadAll();
+  // خفيف — بس الزيارات محتاجة تترتب من جديد
+  const{data:newVs}=await db.from('visits').select('*').order('scheduled_date',{ascending:false});
+  if(newVs){allVisits=newVs;visits=allVisits;}
+  renderVisits();renderSchedule();
   showToast('📋 تم جدولة الزيارة','t-ok');
 }
 
