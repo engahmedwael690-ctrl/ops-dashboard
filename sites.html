@@ -234,7 +234,8 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
     <div class="stat-mini"><div class="sm-icon" style="background:var(--qg)">⏰</div><div><div class="sm-val" style="color:var(--qual)" id="vstPost">0</div><div class="sm-lbl">مؤجلة</div></div></div>
     <div class="stat-mini"><div class="sm-icon" style="background:var(--rdg)">❌</div><div><div class="sm-val" style="color:var(--red)" id="vstCancel">0</div><div class="sm-lbl">ملغية</div></div></div>
   </div>
-  <div class="top-bar">
+  <div class="top-bar" style="flex-wrap:wrap;gap:10px">
+    <div class="search-box">🔍 <input type="text" placeholder="ابحث بالموقع أو المهندس أو التاريخ..." id="visitSearch" oninput="renderVisits()" style="min-width:200px"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm act-filter" onclick="filterVisits('all',this)">الكل</button>
       <button class="btn btn-ghost btn-sm" onclick="filterVisits('scheduled',this)">مجدولة</button>
@@ -628,7 +629,20 @@ document.getElementById('siteDetailOverlay').addEventListener('click',e=>{if(e.t
 // ════════════════════════════════
 function renderVisits(){
   let list=allVisits;
-  if(visitFilter!=='all')list=list.filter(v=>v.status===visitFilter);
+  if(visitFilter!=='all') list=list.filter(v=>v.status===visitFilter);
+  // سيرش
+  const q=(document.getElementById('visitSearch')?.value||'').toLowerCase().trim();
+  if(q){
+    list=list.filter(v=>{
+      const site=sites.find(s=>s.id===v.site_id);
+      const engIds=visitEngineers.filter(ve=>ve.visit_id===v.id).map(ve=>ve.engineer_id);
+      const engNames=engIds.map(eid=>(engineers.find(e=>e.id===eid)||{}).name||'').join(' ');
+      return (site?.name||'').toLowerCase().includes(q)
+        || engNames.toLowerCase().includes(q)
+        || (v.scheduled_date||'').includes(q)
+        || (v.general_notes||'').toLowerCase().includes(q);
+    });
+  }
   document.getElementById('vstTotal').textContent=allVisits.length;
   document.getElementById('vstDone').textContent=allVisits.filter(v=>v.status==='completed').length;
   document.getElementById('vstPost').textContent=allVisits.filter(v=>v.status==='postponed').length;
@@ -662,6 +676,7 @@ function renderVisits(){
         ${v.status==='completed'?`<button class="btn btn-yellow btn-sm" onclick="openRating('${v.id}')">⭐ تقييم</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="openNotesModal('${v.id}')">📝 ملاحظات</button>
         <button class="btn btn-purple btn-sm" onclick="openPhotosModal('${v.id}')">📸 صور</button>
+        <button class="btn btn-red btn-sm" onclick="deleteVisit('${v.id}')" style="margin-right:auto">🗑️ حذف</button>
       </div>
     </div>`;
   }).join('');
@@ -672,6 +687,23 @@ function filterVisits(f,el){
   document.querySelectorAll('.act-filter').forEach(b=>b.classList.remove('act-filter','btn-ops'));
   el.classList.add('act-filter','btn-ops');
   renderVisits();
+}
+
+async function deleteVisit(id){
+  if(!confirm('حذف هذه الزيارة نهائياً؟'))return;
+  // حذف محلي فوراً
+  allVisits=allVisits.filter(v=>v.id!==id);
+  visits=allVisits;
+  renderVisits();
+  showToast('🗑️ تم الحذف','t-ok');
+  // DB في الخلفية
+  await db.from('visit_engineers').delete().eq('visit_id',id);
+  await db.from('visit_photos').delete().eq('visit_id',id);
+  const{error}=await db.from('visits').delete().eq('id',id);
+  if(error){
+    showToast('❌ خطأ — جاري الاسترجاع','t-err');
+    await loadAll();
+  }
 }
 
 function populateSiteDropdown(){
