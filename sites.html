@@ -1055,7 +1055,7 @@ function renderSchedule(){
   const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
   const monthVisits=visits.filter(v=>v.scheduled_date&&v.scheduled_date.startsWith(monthStr));
   const today=new Date().toISOString().split('T')[0];
-  const dayShort=['ح','ن','ث','ر','خ','ج','س'];
+  const dayFull=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
   const thead=document.getElementById('schedHead');
   thead.innerHTML=`<th style="min-width:130px;position:sticky;right:0;background:var(--s2);z-index:2">الموقع</th>`+
@@ -1064,7 +1064,7 @@ function renderSchedule(){
       const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;
       const isToday=ds===today;
       const isWknd=d.getDay()===5||d.getDay()===6;
-      return `<th style="min-width:28px;${isToday?'color:var(--ops);font-weight:900;':''}${isWknd?'opacity:.4;':''}">${i+1}<div style="font-size:.46rem;opacity:.7">${dayShort[d.getDay()]}</div></th>`;
+      return `<th style="min-width:52px;${isToday?'color:var(--ops);font-weight:900;':''}${isWknd?'opacity:.4;':''}">${i+1}<div style="font-size:.52rem;opacity:.8;white-space:nowrap">${dayFull[d.getDay()]}</div></th>`;
     }).join('');
 
   const tbody=document.getElementById('schedBody');
