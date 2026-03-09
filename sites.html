@@ -192,7 +192,50 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 .empty{padding:32px;text-align:center;color:var(--muted);font-size:.78rem}
 .empty-icon{font-size:2rem;opacity:.28;margin-bottom:8px}
 
-@media(max-width:768px){.cards-grid{grid-template-columns:1fr}.fr2,.fr3{grid-template-columns:1fr}}
+/* ═══════════════════════════════
+   RESPONSIVE
+═══════════════════════════════ */
+
+/* Tablet */
+@media(max-width:768px){
+  main{padding:12px}
+  header{padding:0 14px;height:52px}
+  .logo{font-size:.95rem}
+  .tabs-bar{padding:0 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+  .tabs-bar::-webkit-scrollbar{display:none}
+  .tab{padding:10px 12px;font-size:.72rem;white-space:nowrap;flex-shrink:0}
+  .cards-grid{grid-template-columns:1fr}
+  .fr2,.fr3{grid-template-columns:1fr}
+  .stat-mini{padding:10px 12px}
+  .sm-val{font-size:1.1rem}
+  .visit-actions{gap:4px}
+  .btn-sm{padding:4px 8px;font-size:.65rem}
+  .top-bar{flex-direction:column;align-items:stretch}
+  .top-bar .search-box{max-width:100%}
+  .overlay{padding:0;align-items:flex-end}
+  .modal{border-radius:18px 18px 0 0;max-height:92vh;width:100%;max-width:100%}
+  .modal-wide{width:100%}
+  .dp-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .back-btn{padding:4px 10px;font-size:.68rem}
+  #vstStatsRow{grid-template-columns:1fr 1fr!important}
+}
+
+/* Mobile */
+@media(max-width:480px){
+  main{padding:8px}
+  header{height:48px}
+  .logo{font-size:.85rem}
+  .site-card-mid{grid-template-columns:1fr 1fr}
+  .visit-card-top{flex-wrap:wrap;gap:5px}
+  .score-row{flex-wrap:wrap;gap:6px}
+  .tbl th,.tbl td{padding:5px 6px;font-size:.6rem}
+  .eng-stats{gap:6px}
+  .eng-stat-val{font-size:.82rem}
+  .toast{right:8px;left:8px;bottom:10px;font-size:.7rem}
+  .mtitle{font-size:.88rem}
+  .sbtn{font-size:.82rem}
+  .tab{padding:8px 9px;font-size:.65rem}
+}
 </style>
 </head>
 <body>
@@ -228,7 +271,7 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 
 <!-- ══ VISITS TAB ══ -->
 <div class="view" id="view-visits">
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px" id="vstStatsRow">
     <div class="stat-mini"><div class="sm-icon" style="background:var(--blg)">📋</div><div><div class="sm-val" style="color:var(--blue)" id="vstTotal">0</div><div class="sm-lbl">إجمالي الزيارات</div></div></div>
     <div class="stat-mini"><div class="sm-icon" style="background:var(--og)">✅</div><div><div class="sm-val" style="color:var(--ops)" id="vstDone">0</div><div class="sm-lbl">مكتملة</div></div></div>
     <div class="stat-mini"><div class="sm-icon" style="background:var(--qg)">⏰</div><div><div class="sm-val" style="color:var(--qual)" id="vstPost">0</div><div class="sm-lbl">مؤجلة</div></div></div>
