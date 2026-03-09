@@ -392,8 +392,12 @@ async function boot(){
   if(session){currentUser=session.user;await loadProfile();showApp();}
   else{hideLoad();showLogin();}
   db.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_IN'&&session){currentUser=session.user;await loadProfile();showApp();}
-    else if(event==='SIGNED_OUT'){currentUser=null;currentProfile=null;tasks=[];allTasks=[];users=[];showLogin();}
+    // TOKEN_REFRESHED بيحصل تلقائي — منعملش reload
+    if(event==='SIGNED_IN'&&session&&!currentUser){
+      currentUser=session.user;await loadProfile();showApp();
+    } else if(event==='SIGNED_OUT'){
+      currentUser=null;currentProfile=null;tasks=[];allTasks=[];users=[];showLogin();
+    }
   });
 }
 
@@ -819,15 +823,21 @@ function exportCSV(){
 
 // ── CLOCK / TOAST / LOAD ──
 function startClock(){
-  const d=new Date();
-  document.getElementById('dateTxt').textContent=`${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-  const tick=()=>{document.getElementById('timeTxt').textContent=new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit',second:'2-digit'});};
-  tick();setInterval(tick,1000);
+  const update=()=>{
+    const d=new Date();
+    document.getElementById('dateTxt').textContent=`${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+    document.getElementById('timeTxt').textContent=d.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+  };
+  update();
+  // كل دقيقة بس — مش كل ثانية
+  const now=new Date();
+  const msToNextMin=(60-now.getSeconds())*1000-now.getMilliseconds();
+  setTimeout(()=>{update();setInterval(update,60000);},msToNextMin);
 }
 function showToast(msg,type='o'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast t${type} show`;setTimeout(()=>t.classList.remove('show'),3200);}
 function hideLoad(){const el=document.getElementById('loadOv');if(!el)return;el.classList.add('hide');setTimeout(()=>{if(el.parentNode)el.remove();},400);}
 
-setInterval(renderRem,60000);
+// renderRem runs inside silentRefresh every 60s — no separate interval needed
 boot();
 </script>
 </body>
