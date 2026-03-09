@@ -420,8 +420,9 @@ function showApp(){
   document.getElementById('fAssignRow').style.display=isAdmin?'':'none';
   calY=NOW.getFullYear();calM=NOW.getMonth();selDate=todayStr;
   loadData();
-  // تحديث تلقائي كل دقيقة في الخلفية بدون أي loading
-  setInterval(()=>silentRefresh(),60000);
+  // تحديث تلقائي — نمسح القديم قبل ما نعمل جديد
+  if(window._refreshTimer) clearInterval(window._refreshTimer);
+  window._refreshTimer=setInterval(()=>silentRefresh(),60000);
 }
 
 async function silentRefresh(){
@@ -521,44 +522,47 @@ async function saveTask(){
   if(!name){showToast('⚠️ أدخل اسم المهمة','e');return;}
   const isAdmin=currentProfile?.role==='admin';
   const assignedTo=document.getElementById('fAssign').value||null;
-  const payload={name,
+  const savedEditId=editId; // احتفظ بالـ ID قبل closeModal
+  const savedSec=curSec;
+  const payload={
+    name,
     description:document.getElementById('fDesc').value.trim(),
     section:curSec,
     subtype:curSec==='ops'?document.getElementById('fSub').value:'qual',
     priority:document.getElementById('fPri').value,
     task_date:document.getElementById('fDate').value||todayStr,
     due_date:document.getElementById('fDue').value||null,
-    reminder_minutes:parseInt(document.getElementById('fRem').value),
+    reminder_minutes:parseInt(document.getElementById('fRem').value)||0,
     completed:false,
     assigned_to:assignedTo,
     is_admin_assigned:isAdmin&&!!assignedTo
   };
   try{
-    if(editId){
-      const original=allTasks.find(t=>t.id===editId);
+    if(savedEditId){
+      const original=allTasks.find(t=>t.id===savedEditId);
       if(!isAdmin&&original?.is_admin_assigned){showToast('❌ لا يمكن تعديل مهام الأدمن','e');return;}
-      const{error}=await db.from('tasks').update(payload).eq('id',editId);
+      const{error}=await db.from('tasks').update(payload).eq('id',savedEditId);
       if(error)throw error;
-      showToast('✅ تم التحديث',curSec[0]);
+      // تحديث local array مباشرة
+      const idx=allTasks.findIndex(x=>x.id===savedEditId);
+      if(idx>-1) allTasks[idx]={...allTasks[idx],...payload};
+      tasks=allTasks;
+      closeModal();
+      render();renderCal();if(selDate)updateCalTasks(selDate);
+      renderRem();renderAdminView();
+      showToast('✅ تم التحديث',savedSec[0]);
     }else{
       const ins={...payload,created_by:currentUser.id};
-      const{error}=await db.from('tasks').insert([ins]);
+      const{data:newTask,error}=await db.from('tasks').insert([ins]).select().single();
       if(error)throw error;
-      showToast('✅ تم الحفظ',curSec[0]);
+      // ضيف الـ task الجديد للـ local array فوراً
+      allTasks.unshift({...newTask,profiles:null});
+      tasks=allTasks;
+      closeModal();
+      render();renderCal();if(selDate)updateCalTasks(selDate);
+      renderRem();renderAdminView();
+      showToast('✅ تم الحفظ',savedSec[0]);
     }
-    closeModal();
-    // تحديث local — بدون ما نكلم Supabase تاني
-    if(editId){
-      const idx=allTasks.findIndex(x=>x.id===editId);
-      if(idx>-1) allTasks[idx]={...allTasks[idx],...payload};
-    } else {
-      // للـ insert محتاجين نجيب الـ ID الجديد من الـ server
-      await loadData();
-      return;
-    }
-    tasks=allTasks;
-    render();renderCal();if(selDate)updateCalTasks(selDate);
-    renderRem();renderAdminView();
   }catch(e){showToast('❌ '+e.message,'e');}
 }
 
