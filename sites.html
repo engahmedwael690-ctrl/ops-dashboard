@@ -269,8 +269,6 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 
 <!-- ══ SCHEDULE TAB ══ -->
 <div class="view" id="view-schedule">
-
-  <!-- التحكم في الشهر -->
   <div class="top-bar" style="margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <select class="finput" id="schedMonth" style="width:auto" onchange="renderSchedule()">
@@ -286,21 +284,18 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
       </div>
     </div>
     <div style="display:flex;gap:7px">
-      <button class="btn btn-ops" onclick="exportAllExcel()">📊 Excel شامل</button>
-      <button class="btn btn-ghost" onclick="exportScheduleExcel()">📅 جدول الشهر</button>
+      <button class="btn btn-ghost" onclick="exportScheduleExcel()">📥 Excel</button>
       <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
     </div>
   </div>
-
-  <!-- جدول المواقع × الأيام -->
-  <div class="detail-panel" style="margin-bottom:18px">
+  <div class="detail-panel">
     <div class="dp-header">
       <div class="dp-title" id="schedTitle">جدول الزيارات</div>
       <div style="display:flex;gap:10px;font-size:.65rem">
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#60a5fa;display:inline-block"></span>مجدولة</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--ops);display:inline-block"></span>مكتملة</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--qual);display:inline-block"></span>مؤجلة</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#818cf8;display:inline-block"></span>متوقعة</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--red);display:inline-block"></span>ملغية</span>
       </div>
     </div>
     <div class="tbl-wrap" style="padding:12px">
@@ -310,22 +305,6 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
       </table>
     </div>
   </div>
-
-  <!-- قائمة الزيارات القادمة لكل موقع -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-    <div style="font-size:.78rem;font-weight:800;color:var(--text)">🔮 الزيارات القادمة المتوقعة لكل موقع</div>
-    <div style="display:flex;gap:7px;align-items:center">
-      <label style="font-size:.7rem;color:var(--muted)">عدد الأسابيع القادمة:</label>
-      <select class="finput" id="predWeeks" style="width:auto" onchange="renderSchedule()">
-        <option value="4">4 أسابيع</option>
-        <option value="8" selected>8 أسابيع</option>
-        <option value="12">12 أسبوع</option>
-        <option value="24">24 أسبوع</option>
-      </select>
-    </div>
-  </div>
-  <div id="predictionGrid"></div>
-
 </div>
 
 </main>
@@ -1076,303 +1055,55 @@ function renderSchedule(){
   const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
   const monthVisits=visits.filter(v=>v.scheduled_date&&v.scheduled_date.startsWith(monthStr));
   const today=new Date().toISOString().split('T')[0];
+  const dayShort=['ح','ن','ث','ر','خ','ج','س'];
 
-  // ── TABLE: rows = sites, cols = days ──
   const thead=document.getElementById('schedHead');
-  const dayNames=['ح','ن','ث','ر','خ','ج','س']; // Sun=0
-  thead.innerHTML=`<th style="min-width:120px">الموقع</th>`+
+  thead.innerHTML=`<th style="min-width:130px;position:sticky;right:0;background:var(--s2);z-index:2">الموقع</th>`+
     Array.from({length:daysInMonth},(_,i)=>{
       const d=new Date(year,month,i+1);
-      const isToday=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`===today;
-      const isFri=d.getDay()===5;const isSat=d.getDay()===6;
-      return `<th style="${isToday?'color:var(--ops);':''}${isFri||isSat?'color:var(--muted);':''}" title="${dayNames[d.getDay()]}">${i+1}<div style="font-size:.48rem;opacity:.6">${dayNames[d.getDay()]}</div></th>`;
+      const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;
+      const isToday=ds===today;
+      const isWknd=d.getDay()===5||d.getDay()===6;
+      return `<th style="min-width:28px;${isToday?'color:var(--ops);font-weight:900;':''}${isWknd?'opacity:.4;':''}">${i+1}<div style="font-size:.46rem;opacity:.7">${dayShort[d.getDay()]}</div></th>`;
     }).join('');
 
   const tbody=document.getElementById('schedBody');
-  if(!sites.length){tbody.innerHTML=`<tr><td colspan="${daysInMonth+1}" style="text-align:center;padding:20px;color:var(--muted)">لا توجد مواقع</td></tr>`;
-    document.getElementById('predictionGrid').innerHTML='';return;}
+  if(!sites.length){
+    tbody.innerHTML=`<tr><td colspan="${daysInMonth+1}" style="text-align:center;padding:24px;color:var(--muted)">لا توجد مواقع</td></tr>`;
+    return;
+  }
+
+  const colors={scheduled:'#60a5fa',completed:'var(--ops)',postponed:'var(--qual)',cancelled:'var(--red)'};
+  const labels={scheduled:'م',completed:'✓',postponed:'⏰',cancelled:'✕'};
 
   tbody.innerHTML=sites.map(site=>{
-    // get visit frequency pattern for this site
     const siteVisits=visits.filter(v=>v.site_id===site.id);
-    const visitDaysOfWeek=siteVisits.filter(v=>v.scheduled_date)
-      .map(v=>new Date(v.scheduled_date).getDay());
-    // most common day of week
-    const dayCounts={};visitDaysOfWeek.forEach(d=>{dayCounts[d]=(dayCounts[d]||0)+1;});
-    const predictedDOW=Object.keys(dayCounts).length?
-      parseInt(Object.entries(dayCounts).sort((a,b)=>b[1]-a[1])[0][0]):-1;
-
-    const cells=Array.from({length:daysInMonth},(_,d)=>{
-      const dayNum=d+1;
-      const dayStr=`${year}-${String(month+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
-      const dayOfWeek=new Date(year,month,dayNum).getDay();
-      const isToday=dayStr===today;
-      const isFri=dayOfWeek===5;const isSat=dayOfWeek===6;
-
-      // real visit for this site on this day
-      const realVisit=monthVisits.find(v=>v.site_id===site.id&&v.scheduled_date===dayStr);
-      const bgCell=isToday?'background:rgba(0,212,170,.05);':'';
-
-      if(realVisit){
-        const colors={scheduled:'#60a5fa',completed:'var(--ops)',postponed:'var(--qual)',cancelled:'var(--red)'};
-        const col=colors[realVisit.status]||'#60a5fa';
-        const lbl={scheduled:'م',completed:'✓',postponed:'⏰',cancelled:'✕'}[realVisit.status]||'';
-        return `<td style="${bgCell}background:rgba(0,0,0,.2)">
-          <div style="background:${col};border-radius:4px;padding:2px 3px;font-size:.6rem;font-weight:800;color:#07090f;text-align:center;min-width:18px" title="${realVisit.status}">${lbl}</div>
-        </td>`;
-      }
-
-      // predicted visit day
-      if(predictedDOW>=0&&dayOfWeek===predictedDOW&&!isFri&&!isSat&&dayStr>=today){
-        return `<td style="${bgCell}background:rgba(0,0,0,.2)">
-          <div style="background:rgba(129,140,248,.25);border:1px dashed #818cf8;border-radius:4px;padding:2px 3px;font-size:.55rem;color:#818cf8;text-align:center;min-width:18px" title="زيارة متوقعة">؟</div>
-        </td>`;
-      }
-
-      return `<td style="${bgCell}${isFri||isSat?'background:rgba(255,255,255,.02);':''}"></td>`;
-    }).join('');
-
     const done=siteVisits.filter(v=>v.status==='completed').length;
     const pct=site.agreed_visits?Math.round(done/site.agreed_visits*100):0;
+
+    const cells=Array.from({length:daysInMonth},(_,d)=>{
+      const dayStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d+1).padStart(2,'0')}`;
+      const isToday=dayStr===today;
+      const v=monthVisits.find(v=>v.site_id===site.id&&v.scheduled_date===dayStr);
+      const bg=isToday?'background:rgba(0,212,170,.05);':'';
+      if(!v) return `<td style="${bg}"></td>`;
+      const col=colors[v.status]||'#60a5fa';
+      const lbl=labels[v.status]||'م';
+      return `<td style="${bg}background:rgba(0,0,0,.15)">
+        <div style="background:${col};border-radius:3px;padding:2px 3px;font-size:.58rem;font-weight:800;color:#07090f;text-align:center" title="${v.status}">${lbl}</div>
+      </td>`;
+    }).join('');
+
     return `<tr>
-      <td style="font-weight:700;font-size:.73rem;white-space:nowrap;min-width:120px;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="${site.name}">
-        ${site.name}
-        <div style="font-size:.58rem;color:var(--muted);margin-top:1px">${done}/${site.agreed_visits} · ${pct}%</div>
+      <td style="font-weight:700;font-size:.72rem;position:sticky;right:0;background:var(--s2);z-index:1;padding:6px 10px" title="${site.name}">
+        <div style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${site.name}</div>
+        <div style="font-size:.57rem;color:var(--muted);margin-top:1px">${done}/${site.agreed_visits||0} · ${pct}%</div>
       </td>
       ${cells}
     </tr>`;
   }).join('');
-
-  // ── PREDICTION CARDS ──
-  renderPredictions(month, year, today);
 }
 
-// ════════════════════════════════
-// SMART PREDICTION ENGINE
-// ════════════════════════════════
-function detectSitePattern(site){
-  // جيب كل الزيارات المرتبة بالتاريخ
-  const siteVisits=visits
-    .filter(v=>v.site_id===site.id&&v.scheduled_date&&v.status!=='cancelled')
-    .sort((a,b)=>new Date(a.scheduled_date)-new Date(b.scheduled_date));
-
-  if(!siteVisits.length) return {days:[],type:'unknown',label:'لا توجد بيانات'};
-
-  // احسب عدد مرات كل يوم في الأسبوع
-  const dayCounts={0:0,1:0,2:0,3:0,4:0,5:0,6:0};
-  siteVisits.forEach(v=>{ dayCounts[new Date(v.scheduled_date).getDay()]++; });
-
-  // أيام بتجاوز 20% من الزيارات الكلية = يوم ثابت
-  const total=siteVisits.length;
-  const threshold=Math.max(1, total*0.2);
-  const activeDays=Object.entries(dayCounts)
-    .filter(([,cnt])=>cnt>=threshold)
-    .sort((a,b)=>b[1]-a[1])
-    .map(([d])=>parseInt(d));
-
-  const DAY_AR=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-
-  if(activeDays.length===0) return {days:[],type:'unknown',label:'نمط غير واضح'};
-  if(activeDays.length===1) return {
-    days:activeDays,type:'weekly-1',
-    label:`كل ${DAY_AR[activeDays[0]]}`
-  };
-  if(activeDays.length===2) return {
-    days:activeDays.sort((a,b)=>a-b),type:'weekly-2',
-    label:`${DAY_AR[activeDays[0]]} و${DAY_AR[activeDays[1]]} كل أسبوع`
-  };
-  // أكتر من يومين — يأخذ أعلى يومين بس
-  const top2=activeDays.slice(0,2).sort((a,b)=>a-b);
-  return {days:top2,type:'weekly-2',label:`${DAY_AR[top2[0]]} و${DAY_AR[top2[1]]}`};
-}
-
-function generateFutureDates(pattern, weeksAhead, today){
-  if(!pattern.days.length) return [];
-  const results=[];
-  const todayDate=new Date(today);
-  const limit=new Date(todayDate.getTime()+weeksAhead*7*24*60*60*1000);
-  let cursor=new Date(todayDate);
-  cursor.setDate(cursor.getDate()+1); // ابدأ من بكرة
-
-  while(cursor<=limit){
-    if(pattern.days.includes(cursor.getDay())){
-      results.push(cursor.toISOString().split('T')[0]);
-    }
-    cursor.setDate(cursor.getDate()+1);
-  }
-  return results;
-}
-
-function renderPredictions(month, year, today){
-  const grid=document.getElementById('predictionGrid');
-  const weeksAhead=parseInt(document.getElementById('predWeeks')?.value||8);
-  const DAY_AR=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-
-  if(!sites.length){grid.innerHTML='<div class="empty"><div class="empty-icon">🏢</div>لا توجد مواقع</div>';return;}
-
-  grid.innerHTML=sites.map(site=>{
-    const siteVisits=visits.filter(v=>v.site_id===site.id);
-    const done=siteVisits.filter(v=>v.status==='completed').length;
-    const remaining=Math.max(0,site.agreed_visits-done);
-    const pct=site.agreed_visits?Math.round(done/site.agreed_visits*100):0;
-
-    // الزيارات المجدولة الفعلية القادمة
-    const realUpcoming=siteVisits
-      .filter(v=>v.status==='scheduled'&&v.scheduled_date>=today)
-      .sort((a,b)=>new Date(a.scheduled_date)-new Date(b.scheduled_date));
-
-    // اكتشاف النمط
-    const pattern=detectSitePattern(site);
-
-    // توليد التواريخ المتوقعة
-    const predictedDates=generateFutureDates(pattern, weeksAhead, today);
-
-    // دمج الفعلي مع المتوقع — الفعلي له أولوية
-    const realDatesSet=new Set(realUpcoming.map(v=>v.scheduled_date));
-    const merged=[]; // {date, type: 'real'|'predicted', visitNum?}
-    const allDates=new Set([...realUpcoming.map(v=>v.scheduled_date),...predictedDates]);
-    const sortedDates=[...allDates].sort();
-
-    let visitCounter=done+1;
-    sortedDates.forEach(d=>{
-      if(realDatesSet.has(d)){
-        const rv=realUpcoming.find(v=>v.scheduled_date===d);
-        merged.push({date:d,type:'real',visitId:rv?.id||'',num:rv?.visit_number||visitCounter,notes:rv?.general_notes||''});
-      } else {
-        merged.push({date:d,type:'predicted',num:visitCounter});
-      }
-      visitCounter++;
-    });
-
-    const colorPct=pct>=100?'var(--ops)':pct>=60?'#60a5fa':pct>=30?'var(--qual)':'var(--red)';
-    const bgPct=pct>=100?'var(--og)':pct>=60?'var(--blg)':pct>=30?'var(--qg)':'var(--rdg)';
-
-    return `<div style="background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px">
-
-      <!-- Header الموقع -->
-      <div style="padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div>
-          <div style="font-size:.9rem;font-weight:800">${site.name}</div>
-          <div style="font-size:.67rem;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:8px">
-            <span>🔄 ${pattern.label}</span>
-            <span>·</span>
-            <span>${done} / ${site.agreed_visits} زيارة منجزة</span>
-            ${remaining>0?`<span>·</span><span style="color:var(--qual)">${remaining} متبقية</span>`:''}
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <div style="text-align:center">
-            <div style="font-size:1.1rem;font-weight:900;color:${colorPct}">${pct}%</div>
-            <div style="font-size:.55rem;color:var(--muted)">إنجاز</div>
-          </div>
-          <div style="width:6px;height:44px;border-radius:3px;background:var(--s3);overflow:hidden;position:relative">
-            <div style="position:absolute;bottom:0;width:100%;height:${pct}%;background:${colorPct};transition:height .5s"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- قائمة الزيارات -->
-      ${merged.length===0&&remaining===0?`
-        <div style="padding:14px 16px;text-align:center;color:var(--ops);font-size:.78rem;font-weight:700">✅ اكتملت جميع الزيارات المتفق عليها</div>
-      `:merged.length===0?`
-        <div style="padding:14px 16px">
-          <div style="text-align:center;color:var(--muted);font-size:.75rem;padding:10px">
-            ${pattern.days.length===0?'لا يوجد نمط محدد — أضف زيارات لاكتشاف النمط تلقائياً':'لا توجد زيارات قادمة في الفترة المحددة'}
-          </div>
-        </div>
-      `:`
-        <div style="padding:10px 14px">
-          <!-- legend -->
-          <div style="display:flex;gap:12px;margin-bottom:10px;font-size:.62rem;color:var(--muted)">
-            <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:var(--blue);display:inline-block"></span>مجدولة فعلياً</span>
-            <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;border:1px dashed #818cf8;display:inline-block"></span>متوقعة</span>
-          </div>
-          <!-- rows -->
-          <div style="display:flex;flex-direction:column;gap:5px">
-            ${merged.slice(0,weeksAhead).map(item=>{
-              const d=new Date(item.date);
-              const dayName=DAY_AR[d.getDay()];
-              const isReal=item.type==='real';
-              const isSoon=(new Date(item.date)-new Date(today))/(1000*60*60*24)<=7;
-              const editBtn=isReal
-                ? `<button onclick="openVisitModal('${item.visitId||''}')" style="padding:3px 8px;border-radius:5px;border:none;background:rgba(59,130,246,.15);color:#93c5fd;font-family:'Cairo',sans-serif;font-size:.62rem;font-weight:700;cursor:pointer;white-space:nowrap">✏️ تعديل</button>`
-                : `<button onclick="convertPrediction('${site.id}','${item.date}',${item.num})" style="padding:3px 8px;border-radius:5px;border:none;background:rgba(129,140,248,.15);color:#c4b5fd;font-family:'Cairo',sans-serif;font-size:.62rem;font-weight:700;cursor:pointer;white-space:nowrap">📋 جدّل</button>`;
-              return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:${isReal?'var(--blg)':'rgba(129,140,248,.06)'};border:1px ${isReal?'solid rgba(59,130,246,.2)':'dashed rgba(129,140,248,.2)'}">
-                <div style="width:26px;height:26px;border-radius:6px;background:${isReal?'rgba(59,130,246,.2)':'rgba(129,140,248,.12)'};display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;color:${isReal?'#93c5fd':'#c4b5fd'};flex-shrink:0">${item.num}</div>
-                <div style="flex:1;min-width:0">
-                  <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-                    <span style="font-size:.76rem;font-weight:700;color:var(--text)">${item.date}</span>
-                    <span style="font-size:.63rem;color:var(--muted)">${dayName}</span>
-                    ${isSoon?`<span style="font-size:.52rem;padding:1px 5px;border-radius:3px;background:var(--qg);color:var(--qual);font-weight:700">قريباً</span>`:''}
-                  </div>
-                  ${item.notes?`<div style="font-size:.6rem;color:var(--dim);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📝 ${item.notes}</div>`:''}
-                </div>
-                <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-                  ${editBtn}
-                  <span style="font-size:.58rem;color:${isReal?'#60a5fa':'#818cf8'};font-weight:700">${isReal?'مجدولة':'متوقعة'}</span>
-                </div>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>
-      `}
-    </div>`;
-  }).join('');
-}
-
-// ── تحويل زيارة متوقعة لزيارة مجدولة فعلية ──
-async function convertPrediction(siteId, date, visitNum){
-  const{data,error}=await db.from('visits').insert([{
-    site_id:siteId, scheduled_date:date, status:'scheduled',
-    visit_number:visitNum
-  }]).select().single();
-  if(error){showToast('❌ '+error.message,'t-err');return;}
-  // خفيف — بس الزيارات محتاجة تترتب من جديد
-  const{data:newVs}=await db.from('visits').select('*').order('scheduled_date',{ascending:false});
-  if(newVs){allVisits=newVs;visits=allVisits;}
-  renderVisits();renderSchedule();
-  showToast('📋 تم جدولة الزيارة','t-ok');
-}
-
-// ── Excel شامل: الفعلية + المجدولة + المتوقعة ──
-function exportAllExcel(){
-  showToast('📥 جاري التصدير...','t-info');
-  const weeksAhead=parseInt(document.getElementById('predWeeks')?.value||8);
-  const today=new Date().toISOString().split('T')[0];
-  const DAY_AR_EXP=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-  const rows=[['الموقع','المنطقة','رقم الزيارة','التاريخ','اليوم','الحالة','المهندسون','ملاحظات','نوع السجل']];
-  const stMapExp={completed:'مكتملة',scheduled:'مجدولة',postponed:'مؤجلة',cancelled:'ملغية'};
-
-  sites.forEach(site=>{
-    const siteVisits=visits.filter(v=>v.site_id===site.id&&v.status!=='cancelled')
-      .sort((a,b)=>new Date(a.scheduled_date)-new Date(b.scheduled_date));
-    const done=siteVisits.filter(v=>v.status==='completed').length;
-
-    siteVisits.forEach(v=>{
-      const engIds=visitEngineers.filter(ve=>ve.visit_id===v.id).map(ve=>ve.engineer_id);
-      const engNames=engIds.map(eid=>(engineers.find(e=>e.id===eid)||{}).name||'').filter(Boolean).join(' / ');
-      rows.push([site.name,site.region||'',v.visit_number||'',v.scheduled_date,
-        DAY_AR_EXP[new Date(v.scheduled_date).getDay()],
-        stMapExp[v.status]||v.status,engNames,v.general_notes||'','فعلية']);
-    });
-
-    const pattern=detectSitePattern(site);
-    const predictedDates=generateFutureDates(pattern, weeksAhead, today);
-    const realDates=new Set(siteVisits.map(v=>v.scheduled_date));
-    let counter=done+1;
-    predictedDates.filter(d=>!realDates.has(d)).forEach(d=>{
-      rows.push([site.name,site.region||'',counter++,d,
-        DAY_AR_EXP[new Date(d).getDay()],'متوقعة','','','متوقعة']);
-    });
-  });
-
-  const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('
-');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=`تقرير_الزيارات_${today}.csv`;a.click();
-  showToast('✅ تم التصدير','t-ok');
-}
 
 async function exportScheduleExcel(){
   showToast('📥 جاري التصدير...','t-info');
