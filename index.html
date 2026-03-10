@@ -801,6 +801,18 @@ function renderRep(){
 
 // ── ADMIN ──
 function renderAdminView(){if(currentProfile?.role!=='admin')return;renderUsersList();renderTeamProgress();renderAdminReport();}
+
+async function toggleUserRole(uid, currentRole){
+  const newRole=currentRole==='admin'?'user':'admin';
+  const label=newRole==='admin'?'أدمن':'يوزر';
+  if(!confirm(`تغيير الدور لـ ${label}؟`))return;
+  const{error}=await db.from('profiles').update({role:newRole}).eq('id',uid);
+  if(error){showToast('❌ '+error.message,'te');return;}
+  const u=users.find(x=>x.id===uid);
+  if(u) u.role=newRole;
+  renderUsersList();
+  showToast(`✅ تم التغيير لـ ${label}`,'ta');
+}
 function renderUsersList(){
   const el=document.getElementById('usersList');
   if(!users.length){el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:.74rem;padding:16px">لا يوجد مستخدمون</div>';return;}
@@ -814,7 +826,10 @@ function renderUsersList(){
         <div class="user-em">${u.email||''}</div></div>
       </div>
       <div class="user-stats">${uTasks.length} مهمة · <span class="user-stat-val">${done} ✅</span></div>
-      <div class="user-actions"><button class="ua-btn ua-task" onclick="openModalForUser('${u.id}')">+ مهمة</button></div>
+      <div class="user-actions">
+        <button class="ua-btn ua-task" onclick="openModalForUser('${u.id}')">+ مهمة</button>
+        ${u.id!==currentUser.id?`<button class="ua-btn" onclick="toggleUserRole('${u.id}','${u.role}')" style="background:${u.role==='admin'?'var(--admin-g)':'rgba(74,85,104,.15)'};color:${u.role==='admin'?'var(--admin)':'var(--muted)'};border:1px solid ${u.role==='admin'?'rgba(129,140,248,.25)':'var(--border)'}">${u.role==='admin'?'👑 أدمن ← يوزر':'👤 يوزر ← أدمن'}</button>`:'<span style="font-size:.6rem;color:var(--muted)">أنت</span>'}
+      </div>
     </div>`;
   }).join('');
 }
