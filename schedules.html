@@ -210,6 +210,7 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
         <button class="ds-btn" data-d="2" onclick="toggleDay(this)">الثلاثاء</button>
         <button class="ds-btn" data-d="3" onclick="toggleDay(this)">الأربعاء</button>
         <button class="ds-btn" data-d="4" onclick="toggleDay(this)">الخميس</button>
+        <button class="ds-btn" data-d="6" onclick="toggleDay(this)">السبت</button>
       </div>
     </div>
     <div class="fr" id="monthDaysRow" style="display:none">
@@ -559,7 +560,7 @@ function renderMonthly(){
       const d=new Date(year,month,i+1);
       const ds=`${monthStr}-${String(i+1).padStart(2,'0')}`;
       const isToday=ds===today;
-      const isWknd=d.getDay()===5||d.getDay()===6;
+      const isWknd=d.getDay()===5; // الجمعة فقط إجازة — السبت شغل
       return `<th style="min-width:46px;${isToday?'color:var(--ops);font-weight:900;':''}${isWknd?'opacity:.35;':''}">${i+1}<div style="font-size:.44rem;opacity:.7;margin-top:1px">${DAY_AR[d.getDay()]}</div></th>`;
     }).join('');
 
