@@ -418,6 +418,7 @@ function renderScheduleCards(){
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span class="sched-freq ${freqCls}">${FREQ_LABELS[sc.freq_type]||sc.freq_type}</span>
           ${site?.work_plan_text||site?.work_plan_pdf?`<button class="btn btn-ghost btn-sm" onclick="openWP('${site.id}')">📄 خطة</button>`:''}
+          <button class="btn btn-ops btn-sm" onclick="generateSiteMonth('${sc.id}','${sc.site_id}')">⚡ توليد</button>
           <button class="btn btn-ghost btn-sm" onclick="openSchedModal('${sc.id}')">✏️ تعديل</button>
         </div>
       </div>
@@ -643,6 +644,47 @@ function renderMonthly(){
 // ══════════════════════
 // GENERATE MONTH VISITS
 // ══════════════════════
+async function generateSiteMonth(schedId, siteId){
+  const month=parseInt(document.getElementById('mMonth').value);
+  const year=parseInt(document.getElementById('mYear').value);
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const prevEnd=new Date(year,month,0).toISOString().split('T')[0];
+  const sc=schedules.find(x=>x.id===schedId);
+  if(!sc) return;
+
+  // الزيارات الموجودة فعلاً لهذا الموقع في هذا الشهر
+  const existing=visits.filter(v=>v.site_id===siteId&&v.scheduled_date?.startsWith(monthStr));
+  const existingDates=new Set(existing.map(v=>v.scheduled_date));
+
+  // التواريخ المتوقعة من الجدول
+  const predicted=generateDates(sc,prevEnd,60).filter(d=>d.startsWith(monthStr));
+  const toInsert=predicted
+    .filter(date=>!existingDates.has(date))
+    .map((date,i)=>({site_id:siteId,scheduled_date:date,status:'scheduled',visit_number:existing.length+i+1}));
+
+  if(!toInsert.length){
+    showToast('✅ كل زيارات الموقع موجودة بالفعل','t-info');
+    return;
+  }
+
+  const site=sites.find(s=>s.id===siteId);
+  if(!confirm(`توليد ${toInsert.length} زيارة لـ "${site?.name}" في ${monthStr}؟`))return;
+
+  const{data,error}=await db.from('visits').insert(toInsert).select();
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+
+  // إسناد المهندس الافتراضي
+  if(sc.engineer_id && data?.length){
+    const engInserts=data.map(v=>({visit_id:v.id,engineer_id:sc.engineer_id}));
+    await db.from('visit_engineers').insert(engInserts);
+    visitEngineers.push(...engInserts.map((x,i)=>({...x,id:'gs'+Date.now()+i})));
+  }
+
+  visits=[...(data||[]),...visits];
+  renderMonthly();renderToday();
+  showToast(`⚡ تم توليد ${toInsert.length} زيارة لـ "${site?.name}"`, 't-ok');
+}
+
 async function generateMonthVisits(){
   const month=parseInt(document.getElementById('mMonth').value);
   const year=parseInt(document.getElementById('mYear').value);
