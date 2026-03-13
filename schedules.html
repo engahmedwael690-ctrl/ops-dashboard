@@ -127,13 +127,32 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
   </div>
 </header>
 <div class="tabs-bar">
-  <button class="tab act" onclick="switchTab('schedules',this)">📋 الجداول الثابتة</button>
+  <button class="tab act" onclick="switchTab('today',this)">📍 مواقع اليوم</button>
+  <button class="tab" onclick="switchTab('schedules',this)">📋 الجداول الثابتة</button>
   <button class="tab" onclick="switchTab('monthly',this)">📅 الجدول الشهري</button>
 </div>
 <main>
 
+<!-- ══ TODAY TAB ══ -->
+<div class="view show" id="view-today">
+  <div id="todayHeader" style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div>
+        <div id="todayDateLabel" style="font-size:1.1rem;font-weight:900;color:var(--ops)"></div>
+        <div id="todaySubLabel" style="font-size:.7rem;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-ghost btn-sm" onclick="shiftToday(-1)">‹ أمس</button>
+        <button class="btn btn-ghost btn-sm" onclick="goToday()">اليوم</button>
+        <button class="btn btn-ghost btn-sm" onclick="shiftToday(1)">غداً ›</button>
+      </div>
+    </div>
+  </div>
+  <div id="todayGrid"></div>
+</div>
+
 <!-- ══ SCHEDULES TAB ══ -->
-<div class="view show" id="view-schedules">
+<div class="view" id="view-schedules">
   <div class="top-bar">
     <div class="search-box">🔍 <input type="text" placeholder="ابحث عن موقع..." id="schedSearch" oninput="renderScheduleCards()"></div>
     <button class="btn btn-ops" onclick="openSchedModal()">+ إضافة جدول</button>
@@ -335,6 +354,7 @@ async function loadAll(){
   populateDropdowns();
   renderScheduleCards();
   renderMonthly();
+  renderToday();
 }
 
 function populateDropdowns(){
@@ -365,6 +385,7 @@ function switchTab(name,el){
   document.getElementById('view-'+name).classList.add('show');
   el.classList.add('act');
   if(name==='monthly')renderMonthly();
+  if(name==='today')renderToday();
 }
 
 // ══════════════════════
@@ -813,6 +834,108 @@ function showToast(msg,cls='t-ok'){
 function hideLoad(){
   const el=document.getElementById('loadOv');
   if(!el)return;el.classList.add('hide');setTimeout(()=>{if(el.parentNode)el.remove();},400);
+}
+
+
+// ══════════════════════
+// TODAY VIEW
+// ══════════════════════
+let todayViewDate = new Date().toISOString().split('T')[0];
+
+function shiftToday(dir){
+  const d = new Date(todayViewDate + 'T12:00:00');
+  d.setDate(d.getDate() + dir);
+  todayViewDate = d.toISOString().split('T')[0];
+  renderToday();
+}
+function goToday(){
+  todayViewDate = new Date().toISOString().split('T')[0];
+  renderToday();
+}
+
+function renderToday(){
+  const d = new Date(todayViewDate + 'T12:00:00');
+  const isActualToday = todayViewDate === new Date().toISOString().split('T')[0];
+  const monthNames=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  document.getElementById('todayDateLabel').textContent =
+    `${isActualToday ? '📍 ' : '📅 '}${DAY_AR[d.getDay()]} ${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+  document.getElementById('todaySubLabel').textContent =
+    isActualToday ? 'زيارات اليوم' : 'زيارات هذا اليوم';
+
+  // Real visits on this date
+  const dayVisits = visits.filter(v => v.scheduled_date === todayViewDate && v.status !== 'cancelled');
+
+  // Predicted visits from schedules (sites with no real visit yet on this day)
+  const realSiteIds = new Set(dayVisits.map(v => v.site_id));
+  const predictedItems = [];
+  schedules.forEach(sc => {
+    if(realSiteIds.has(sc.site_id)) return;
+    const dates = generateDates(sc, new Date(new Date(todayViewDate+'T12:00:00') - 86400000).toISOString().split('T')[0], 3);
+    if(dates.includes(todayViewDate)) predictedItems.push(sc);
+  });
+
+  const el = document.getElementById('todayGrid');
+
+  if(!dayVisits.length && !predictedItems.length){
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🌴</div>لا توجد زيارات مجدولة لهذا اليوم</div>`;
+    return;
+  }
+
+  const stColors = {scheduled:'var(--blg)',completed:'var(--og)',postponed:'var(--qg)',cancelled:'var(--rdg)'};
+  const stBorder = {scheduled:'rgba(59,130,246,.25)',completed:'rgba(0,212,170,.25)',postponed:'rgba(245,158,11,.25)',cancelled:'rgba(252,92,125,.25)'};
+  const stLabel = {scheduled:'📋 مجدولة',completed:'✅ مكتملة',postponed:'⏰ مؤجلة',cancelled:'❌ ملغية'};
+
+  const realHTML = dayVisits.map(v => {
+    const site = sites.find(s => s.id === v.site_id);
+    const veList = visitEngineers.filter(x => x.visit_id === v.id);
+    const engList = veList.map(ve => engineers.find(e => e.id === ve.engineer_id)).filter(Boolean);
+    const bg = stColors[v.status] || stColors.scheduled;
+    const bd = stBorder[v.status] || stBorder.scheduled;
+    return `<div style="background:${bg};border:1px solid ${bd};border-radius:12px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:.9rem;font-weight:900;margin-bottom:4px">🏢 ${site?.name || '—'}</div>
+          <div style="font-size:.65rem;color:var(--muted)">${site?.region || ''} ${site?.address ? '· '+site.address : ''}</div>
+          <div style="margin-top:6px;font-size:.72rem;color:var(--dim)">زيارة رقم ${v.visit_number || '—'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          <span style="font-size:.62rem;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(0,0,0,.2)">${stLabel[v.status]||''}</span>
+          <button class="btn btn-ghost btn-sm" onclick="openVisitEdit('${v.id}')">✏️ تعديل</button>
+        </div>
+      </div>
+      <div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.07);padding-top:10px">
+        <div style="font-size:.65rem;color:var(--muted);margin-bottom:7px;font-weight:700">👷 المهندسون</div>
+        ${engList.length ?
+          `<div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${engList.map(e => `<span style="background:var(--blg);color:#93c5fd;border-radius:6px;padding:4px 11px;font-size:.7rem;font-weight:700">👷 ${e.name}</span>`).join('')}
+           </div>` :
+          `<div style="font-size:.68rem;color:var(--muted)">لم يُسنَد مهندس بعد —
+           <button onclick="openVisitEdit('${v.id}')" style="background:none;border:none;color:var(--ops);font-size:.68rem;cursor:pointer;font-family:Cairo,sans-serif;font-weight:700">+ أضف مهندس</button></div>`
+        }
+      </div>
+      ${v.general_notes ? `<div style="margin-top:8px;font-size:.68rem;color:var(--dim);border-top:1px solid rgba(255,255,255,.05);padding-top:7px">📝 ${v.general_notes}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  const predHTML = predictedItems.map(sc => {
+    const site = sites.find(s => s.id === sc.site_id);
+    const defEng = engineers.find(e => e.id === sc.engineer_id);
+    return `<div style="background:var(--pg);border:1px dashed rgba(129,140,248,.3);border-radius:12px;padding:14px 16px;margin-bottom:10px;opacity:.85">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:.9rem;font-weight:900;margin-bottom:3px">🏢 ${site?.name || '—'}</div>
+          <div style="font-size:.65rem;color:var(--muted)">${site?.region || ''}</div>
+          ${defEng ? `<div style="margin-top:5px"><span style="background:var(--blg);color:#93c5fd;border-radius:5px;padding:3px 9px;font-size:.67rem;font-weight:700">👷 ${defEng.name}</span></div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-size:.6rem;color:var(--purple);font-weight:700;background:rgba(129,140,248,.1);padding:3px 8px;border-radius:4px">متوقعة</span>
+          <button class="btn btn-ghost btn-sm" onclick="createVisitFromPred('${sc.site_id}','${todayViewDate}','${sc.id}');setTimeout(renderToday,800)" style="color:var(--ops)">+ جدّل</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = realHTML + (predHTML ? `<div style="font-size:.68rem;color:var(--muted);margin:14px 0 8px;font-weight:700">🔮 متوقعة — لم تُجدَّل بعد</div>${predHTML}` : '');
 }
 
 init();
