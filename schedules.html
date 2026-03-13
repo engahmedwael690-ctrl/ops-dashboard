@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الجداول الثابتة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#07090f;--s:#0f1623;--s2:#161e2e;--s3:#1c2840;
+  --ops:#00d4aa;--og:rgba(0,212,170,.12);
+  --qual:#f59e0b;--qg:rgba(245,158,11,.12);
+  --blue:#3b82f6;--blg:rgba(59,130,246,.12);
+  --red:#fc5c7d;--rdg:rgba(252,92,125,.12);
+  --purple:#818cf8;--pg:rgba(129,140,248,.12);
+  --text:#e2e8f0;--muted:#4a5568;--dim:#718096;
+  --border:rgba(255,255,255,.06);--r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+.load-ov{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .35s}
+.load-ov.hide{opacity:0;pointer-events:none}
+.spinner{width:40px;height:40px;border:3px solid var(--s3);border-top-color:var(--ops);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+header{position:sticky;top:0;z-index:100;background:rgba(7,9,15,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 18px;display:flex;align-items:center;justify-content:space-between;height:54px}
+.logo{font-size:1rem;font-weight:900;background:linear-gradient(135deg,var(--ops),#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-r{display:flex;align-items:center;gap:8px}
+.back-btn{padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--dim);font-family:'Cairo',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.back-btn:hover{background:var(--s3);color:var(--text)}
+.tabs-bar{background:transparent;border-bottom:1px solid var(--border);padding:0 18px;display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs-bar::-webkit-scrollbar{display:none}
+.tab{padding:10px 16px;border:none;background:transparent;color:var(--muted);font-family:'Cairo',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;white-space:nowrap;flex-shrink:0}
+.tab:hover{color:var(--text)}.tab.act{color:var(--ops);border-bottom-color:var(--ops)}
+main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
+.view{display:none}.view.show{display:block}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;gap:7px;background:var(--s);border:1px solid var(--border);border-radius:9px;padding:7px 12px;flex:1;max-width:320px}
+.search-box input{background:transparent;border:none;outline:none;color:var(--text);font-family:'Cairo',sans-serif;font-size:.8rem;width:100%}
+.search-box input::placeholder{color:var(--muted)}
+.btn{padding:7px 15px;border-radius:8px;border:none;font-family:'Cairo',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.btn-ops{background:var(--ops);color:#07090f}.btn-ops:hover{filter:brightness(1.1)}
+.btn-ghost{background:var(--s2);color:var(--dim);border:1px solid var(--border)}.btn-ghost:hover{background:var(--s3);color:var(--text)}
+.btn-red{background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.2)}.btn-red:hover{background:rgba(252,92,125,.25)}
+.btn-sm{padding:4px 9px;font-size:.66rem;border-radius:6px}
+.fr{margin-bottom:12px}.flbl{font-size:.7rem;color:var(--dim);margin-bottom:4px;display:block;font-weight:700}
+.finput,.fsel,.ftxt{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-family:'Cairo',sans-serif;font-size:.8rem;outline:none;transition:border-color .2s}
+.finput:focus,.fsel:focus,.ftxt:focus{border-color:rgba(255,255,255,.18)}
+.fsel option{background:var(--s2)}.ftxt{resize:vertical;min-height:70px}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sbtn{width:100%;padding:10px;border-radius:9px;border:none;font-family:'Cairo',sans-serif;font-size:.86rem;font-weight:800;cursor:pointer;transition:all .2s;margin-top:6px}
+.sbtn-ops{background:var(--ops);color:#07090f}.sbtn-ops:hover{filter:brightness(1.1)}
+.sbtn-red{background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.3)}
+.overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.82);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--s);border:1px solid rgba(255,255,255,.09);border-radius:18px;width:580px;max-width:100%;padding:22px;position:relative;animation:mup .22s ease;max-height:92vh;overflow-y:auto}
+.modal-wide{width:780px}
+@keyframes mup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.mcls{position:absolute;top:11px;left:11px;width:26px;height:26px;border-radius:6px;background:var(--s2);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center}
+.mcls:hover{color:var(--text)}.mtitle{font-size:.95rem;font-weight:800;margin-bottom:15px;padding-left:28px}
+/* SCHEDULE CARD */
+.sched-card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;transition:border-color .2s}
+.sched-card:hover{border-color:rgba(0,212,170,.2)}
+.sched-hdr{padding:12px 15px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:8px}
+.sched-site{font-size:.88rem;font-weight:800}
+.sched-freq{font-size:.63rem;padding:2px 8px;border-radius:4px;font-weight:700}
+.sf-weekly{background:var(--blg);color:#60a5fa}
+.sf-monthly{background:var(--og);color:var(--ops)}
+.sf-daily{background:var(--pg);color:var(--purple)}
+.sched-body{padding:11px 15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.day-pill{padding:3px 9px;border-radius:12px;font-size:.62rem;font-weight:700;background:var(--s2);border:1px solid var(--border);color:var(--muted)}
+.day-pill.active{background:var(--og);color:var(--ops);border-color:rgba(0,212,170,.2)}
+.eng-badge{background:var(--blg);color:#93c5fd;border-radius:6px;padding:3px 9px;font-size:.65rem;font-weight:600}
+/* MONTHLY TABLE */
+.tbl-wrap{overflow-x:auto}
+.mtbl{width:100%;border-collapse:collapse;font-size:.72rem}
+.mtbl th{text-align:center;padding:6px 5px;background:var(--s2);color:var(--muted);font-weight:700;font-size:.6rem;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:2}
+.mtbl th:first-child{text-align:right;min-width:140px;position:sticky;right:0;background:var(--s2);z-index:3}
+.mtbl td{padding:5px;border-bottom:1px solid rgba(255,255,255,.02);text-align:center;vertical-align:middle}
+.mtbl td:first-child{text-align:right;padding:6px 10px;font-weight:700;color:var(--text);white-space:nowrap;position:sticky;right:0;background:var(--s);z-index:1}
+.mtbl tr:hover td{background:rgba(255,255,255,.02)}
+.mtbl tr:hover td:first-child{background:var(--s2)}
+.cell-visit{border-radius:5px;padding:3px 6px;font-size:.62rem;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;cursor:pointer;transition:all .15s;min-width:32px;justify-content:center}
+.cell-visit:hover{filter:brightness(1.2);transform:scale(1.05)}
+.cv-sched{background:var(--blg);color:#60a5fa}
+.cv-done{background:var(--og);color:var(--ops)}
+.cv-post{background:var(--qg);color:var(--qual)}
+.cv-cancel{background:var(--rdg);color:var(--red)}
+.cv-pred{background:rgba(129,140,248,.15);color:var(--purple);border:1px dashed rgba(129,140,248,.4)}
+.cell-today{background:rgba(0,212,170,.04)!important}
+/* DAY SELECTOR */
+.days-sel{display:flex;gap:5px;flex-wrap:wrap}
+.ds-btn{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Cairo',sans-serif;font-size:.7rem;cursor:pointer;transition:all .15s}
+.ds-btn.on{background:var(--og);color:var(--ops);border-color:rgba(0,212,170,.3)}
+/* ENGINEER MULTI-SELECT */
+.eng-selector{display:flex;flex-wrap:wrap;gap:5px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px;min-height:42px}
+.eng-toggle{padding:4px 11px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Cairo',sans-serif;font-size:.7rem;cursor:pointer;transition:all .15s}
+.eng-toggle.sel{background:var(--blg);color:#93c5fd;border-color:rgba(59,130,246,.3)}
+/* WORK PLAN */
+.pdf-upload{border:2px dashed rgba(255,255,255,.1);border-radius:8px;padding:14px;text-align:center;cursor:pointer;position:relative;transition:border-color .2s}
+.pdf-upload:hover{border-color:var(--blue)}
+.pdf-upload input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+/* TOAST */
+.toast{position:fixed;bottom:14px;right:14px;z-index:9999;background:var(--s);border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-size:.74rem;font-weight:600;transform:translateY(50px);opacity:0;transition:all .26s;box-shadow:0 7px 22px rgba(0,0,0,.55)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.t-ok{border-color:var(--ops)}.toast.t-err{border-color:var(--red)}.toast.t-info{border-color:var(--blue)}
+.empty{padding:30px;text-align:center;color:var(--muted);font-size:.76rem}
+.empty-icon{font-size:1.8rem;opacity:.28;margin-bottom:7px}
+/* CARD */
+.panel{background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+@media(max-width:768px){
+  .fr2{grid-template-columns:1fr}
+  .modal,.modal-wide{border-radius:18px 18px 0 0;max-height:92vh;width:100%}
+  .overlay{padding:0;align-items:flex-end}
+  main{padding:10px}
+}
+</style>
+</head>
+<body>
+<div class="load-ov" id="loadOv"><div class="spinner"></div><div style="font-size:.76rem;color:var(--muted)">جاري التحميل...</div></div>
+<header>
+  <div class="logo">📅 الجداول الثابتة</div>
+  <div class="hdr-r">
+    <a href="sites.html" class="back-btn">🏢 المواقع</a>
+    <a href="index.html" class="back-btn">← الداش بورد</a>
+  </div>
+</header>
+<div class="tabs-bar">
+  <button class="tab act" onclick="switchTab('schedules',this)">📋 الجداول الثابتة</button>
+  <button class="tab" onclick="switchTab('monthly',this)">📅 الجدول الشهري</button>
+</div>
+<main>
+
+<!-- ══ SCHEDULES TAB ══ -->
+<div class="view show" id="view-schedules">
+  <div class="top-bar">
+    <div class="search-box">🔍 <input type="text" placeholder="ابحث عن موقع..." id="schedSearch" oninput="renderScheduleCards()"></div>
+    <button class="btn btn-ops" onclick="openSchedModal()">+ إضافة جدول</button>
+  </div>
+  <div id="schedCards"></div>
+</div>
+
+<!-- ══ MONTHLY TAB ══ -->
+<div class="view" id="view-monthly">
+  <div class="top-bar" style="margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="shiftMonth(-1)">‹ السابق</button>
+      <select class="finput" id="mMonth" style="width:auto" onchange="renderMonthly()">
+        <option value="0">يناير</option><option value="1">فبراير</option><option value="2">مارس</option>
+        <option value="3">أبريل</option><option value="4">مايو</option><option value="5">يونيو</option>
+        <option value="6">يوليو</option><option value="7">أغسطس</option><option value="8">سبتمبر</option>
+        <option value="9">أكتوبر</option><option value="10">نوفمبر</option><option value="11">ديسمبر</option>
+      </select>
+      <select class="finput" id="mYear" style="width:auto" onchange="renderMonthly()"></select>
+      <button class="btn btn-ghost btn-sm" onclick="shiftMonth(1)">التالي ›</button>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-ops" onclick="generateMonthVisits()">⚡ توليد زيارات الشهر</button>
+      <button class="btn btn-ghost" onclick="exportMonthlyCSV()">📥 Excel</button>
+      <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:.63rem">
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:#60a5fa;display:inline-block"></span>مجدولة</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:var(--ops);display:inline-block"></span>مكتملة</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:var(--qual);display:inline-block"></span>مؤجلة</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:var(--purple);border:1px dashed;display:inline-block"></span>متوقعة — اضغط لجدولة</span>
+  </div>
+  <div class="panel">
+    <div class="tbl-wrap" style="padding:8px">
+      <table class="mtbl" id="monthTable">
+        <thead><tr id="monthHead"></tr></thead>
+        <tbody id="monthBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ══ SCHEDULE MODAL ══ -->
+<div class="overlay" id="schedOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeSchedModal()">✕</button>
+    <div class="mtitle" id="schedModalTitle">📋 إضافة جدول ثابت</div>
+    <div class="fr">
+      <label class="flbl">الموقع *</label>
+      <select class="fsel" id="smSite"><option value="">— اختر موقع —</option></select>
+    </div>
+    <div class="fr">
+      <label class="flbl">المهندس الافتراضي</label>
+      <select class="fsel" id="smEngineer"><option value="">— بدون مهندس —</option></select>
+    </div>
+    <div class="fr">
+      <label class="flbl">نوع التكرار *</label>
+      <select class="fsel" id="smFreq" onchange="toggleFreqFields()">
+        <option value="weekly">أسبوعي — يوم أو يومين ثابت في الأسبوع</option>
+        <option value="biweekly">كل أسبوعين</option>
+        <option value="monthly_once">شهري — مرة واحدة</option>
+        <option value="monthly_twice">شهري — مرتين</option>
+        <option value="daily">يومي — كل يوم</option>
+      </select>
+    </div>
+    <div class="fr" id="weekDaysRow">
+      <label class="flbl">أيام الأسبوع</label>
+      <div class="days-sel">
+        <button class="ds-btn" data-d="0" onclick="toggleDay(this)">الأحد</button>
+        <button class="ds-btn" data-d="1" onclick="toggleDay(this)">الاثنين</button>
+        <button class="ds-btn" data-d="2" onclick="toggleDay(this)">الثلاثاء</button>
+        <button class="ds-btn" data-d="3" onclick="toggleDay(this)">الأربعاء</button>
+        <button class="ds-btn" data-d="4" onclick="toggleDay(this)">الخميس</button>
+      </div>
+    </div>
+    <div class="fr" id="monthDaysRow" style="display:none">
+      <label class="flbl">أيام الشهر — ادخل الأرقام مفصولة بفاصلة (مثال: 5 أو 5,20)</label>
+      <input type="text" class="finput" id="smMonthDays" placeholder="5 أو 5,20">
+    </div>
+    <div class="fr">
+      <label class="flbl">ملاحظات</label>
+      <textarea class="ftxt" id="smNotes" placeholder="ملاحظات إضافية..." style="min-height:55px"></textarea>
+    </div>
+    <button class="sbtn sbtn-ops" onclick="saveSchedule()">💾 حفظ الجدول</button>
+    <button class="sbtn sbtn-red" id="smDeleteBtn" style="display:none;margin-top:6px" onclick="deleteSchedule()">🗑️ حذف هذا الجدول</button>
+  </div>
+</div>
+
+<!-- ══ VISIT EDIT MODAL ══ -->
+<div class="overlay" id="visitEditOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeVisitEdit()">✕</button>
+    <div class="mtitle" id="veTitle">تعديل الزيارة</div>
+    <!-- Site + date -->
+    <div class="fr2">
+      <div class="fr" style="margin:0">
+        <label class="flbl">📅 التاريخ</label>
+        <input type="date" class="finput" id="veDate">
+      </div>
+      <div class="fr" style="margin:0">
+        <label class="flbl">رقم الزيارة</label>
+        <input type="number" class="finput" id="veNum" min="1">
+      </div>
+    </div>
+    <!-- Status -->
+    <div class="fr" style="margin-top:10px">
+      <label class="flbl">الحالة</label>
+      <select class="fsel" id="veStatus">
+        <option value="scheduled">📋 مجدولة</option>
+        <option value="completed">✅ مكتملة</option>
+        <option value="postponed">⏰ مؤجلة</option>
+        <option value="cancelled">❌ ملغية</option>
+      </select>
+    </div>
+    <!-- Engineers multi-select -->
+    <div class="fr">
+      <label class="flbl">👷 المهندسون — اختر واحد أو أكثر</label>
+      <div class="eng-selector" id="veEngSelector"></div>
+    </div>
+    <!-- Notes -->
+    <div class="fr">
+      <label class="flbl">ملاحظات الزيارة</label>
+      <textarea class="ftxt" id="veNotes" placeholder="ملاحظات..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="sbtn sbtn-ops" style="flex:1" onclick="saveVisitEdit()">💾 حفظ التعديل</button>
+      <button class="sbtn sbtn-red" style="flex:0 0 auto;width:auto;padding:10px 18px;margin-top:6px" onclick="deleteVisitEdit()">🗑️</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WORK PLAN MODAL ══ -->
+<div class="overlay" id="wpOverlay">
+  <div class="modal modal-wide">
+    <button class="mcls" onclick="closeWP()">✕</button>
+    <div class="mtitle" id="wpTitle">📄 خطة العمل</div>
+    <div style="background:var(--s2);border-radius:9px;padding:13px;margin-bottom:12px">
+      <div style="font-size:.7rem;font-weight:800;color:var(--ops);margin-bottom:8px">📎 رفع PDF</div>
+      <div class="pdf-upload">
+        <input type="file" accept="application/pdf" id="pdfInput" onchange="handlePdfUpload(this)">
+        <div style="font-size:.74rem;color:var(--muted)">اسحب ملف PDF هنا أو اضغط للاختيار</div>
+        <div id="pdfStatus" style="margin-top:5px;font-size:.7rem;color:var(--ops)"></div>
+      </div>
+      <div id="pdfLinkArea" style="margin-top:7px"></div>
+    </div>
+    <div style="background:var(--s2);border-radius:9px;padding:13px">
+      <div style="font-size:.7rem;font-weight:800;color:var(--ops);margin-bottom:8px">📝 نص خطة العمل</div>
+      <textarea class="ftxt" id="wpText" placeholder="اكتب خطة العمل هنا..." style="min-height:180px"></textarea>
+    </div>
+    <button class="sbtn sbtn-ops" style="margin-top:10px" onclick="saveWorkPlan()">💾 حفظ خطة العمل</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://cpbevbjzndfmtvlrwael.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwYmV2Ymp6bmRmbXR2bHJ3YWVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3OTI3ODgsImV4cCI6MjA4ODM2ODc4OH0.XjKAh5d5LthYe1pSu2ecwFl4jOA3I3TDc8DRpSkHHvQ';
+const {createClient}=supabase;
+const db=createClient(SB_URL,SB_KEY);
+
+const DAY_AR=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const FREQ_LABELS={weekly:'أسبوعي',biweekly:'كل أسبوعين',monthly_once:'شهري',monthly_twice:'شهري مرتين',daily:'يومي'};
+const FREQ_CLS={weekly:'sf-weekly',biweekly:'sf-weekly',monthly_once:'sf-monthly',monthly_twice:'sf-monthly',daily:'sf-daily'};
+
+let sites=[], engineers=[], schedules=[], visits=[], visitEngineers=[];
+let editSchedId=null, editVisitId=null, wpSiteId=null;
+
+// ══════════════════════
+// INIT
+// ══════════════════════
+async function init(){
+  const now=new Date();
+  document.getElementById('mMonth').value=now.getMonth();
+  const ySel=document.getElementById('mYear');
+  for(let y=now.getFullYear()-1;y<=now.getFullYear()+2;y++){
+    const o=document.createElement('option');
+    o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;
+    ySel.appendChild(o);
+  }
+  await loadAll();
+  hideLoad();
+}
+
+async function loadAll(){
+  const [s,e,sc,v,ve]=await Promise.all([
+    db.from('sites').select('*').eq('is_active',true).order('name'),
+    db.from('engineers').select('*').eq('is_active',true).order('name'),
+    db.from('site_schedules').select('*').eq('is_active',true),
+    db.from('visits').select('*').order('scheduled_date',{ascending:false}),
+    db.from('visit_engineers').select('*')
+  ]);
+  sites=s.data||[];engineers=e.data||[];schedules=sc.data||[];
+  visits=v.data||[];visitEngineers=ve.data||[];
+  populateDropdowns();
+  renderScheduleCards();
+  renderMonthly();
+}
+
+function populateDropdowns(){
+  const sOpts='<option value="">— اختر موقع —</option>'+sites.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  const eOpts='<option value="">— بدون مهندس —</option>'+engineers.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  document.getElementById('smSite').innerHTML=sOpts;
+  document.getElementById('smEngineer').innerHTML=eOpts;
+}
+
+function buildEngSelector(containerId, selectedIds=[]){
+  const el=document.getElementById(containerId);
+  if(!engineers.length){el.innerHTML='<span style="font-size:.7rem;color:var(--muted)">لا يوجد مهندسون</span>';return;}
+  el.innerHTML=engineers.map(e=>`
+    <button type="button" class="eng-toggle ${selectedIds.includes(e.id)?'sel':''}" data-id="${e.id}" onclick="this.classList.toggle('sel')">${e.name}</button>
+  `).join('');
+}
+
+function getSelectedEngs(containerId){
+  return [...document.querySelectorAll(`#${containerId} .eng-toggle.sel`)].map(b=>b.dataset.id);
+}
+
+// ══════════════════════
+// TABS
+// ══════════════════════
+function switchTab(name,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('act'));
+  document.getElementById('view-'+name).classList.add('show');
+  el.classList.add('act');
+  if(name==='monthly')renderMonthly();
+}
+
+// ══════════════════════
+// SCHEDULE CARDS
+// ══════════════════════
+function renderScheduleCards(){
+  const q=(document.getElementById('schedSearch')?.value||'').toLowerCase();
+  const el=document.getElementById('schedCards');
+  let list=schedules;
+  if(q) list=list.filter(sc=>(sites.find(s=>s.id===sc.site_id)?.name||'').toLowerCase().includes(q));
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📋</div>${q?'لا نتائج':'لا توجد جداول — أضف جدول لموقع'}</div>`;
+    return;
+  }
+  const today=new Date().toISOString().split('T')[0];
+  el.innerHTML=list.map(sc=>{
+    const site=sites.find(s=>s.id===sc.site_id);
+    const eng=engineers.find(e=>e.id===sc.engineer_id);
+    const days=(sc.week_days||[]).map(Number).sort();
+    const mdays=(sc.month_days||[]).sort((a,b)=>a-b);
+    const nextDates=generateDates(sc,today,2);
+    const nextDate=nextDates[0]||null;
+    const freqCls=FREQ_CLS[sc.freq_type]||'sf-weekly';
+    return `<div class="sched-card">
+      <div class="sched-hdr">
+        <div>
+          <div class="sched-site">🏢 ${site?.name||'—'}</div>
+          <div style="font-size:.62rem;color:var(--muted);margin-top:2px">${site?.region||''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="sched-freq ${freqCls}">${FREQ_LABELS[sc.freq_type]||sc.freq_type}</span>
+          ${site?.work_plan_text||site?.work_plan_pdf?`<button class="btn btn-ghost btn-sm" onclick="openWP('${site.id}')">📄 خطة</button>`:''}
+          <button class="btn btn-ghost btn-sm" onclick="openSchedModal('${sc.id}')">✏️ تعديل</button>
+        </div>
+      </div>
+      <div class="sched-body">
+        ${sc.freq_type==='daily'?'<span class="day-pill active">كل يوم</span>':
+          sc.freq_type==='weekly'||sc.freq_type==='biweekly'?
+          `<div style="display:flex;gap:4px;flex-wrap:wrap">${[0,1,2,3,4].map(d=>`<span class="day-pill ${days.includes(d)?'active':''}">${DAY_AR[d]}</span>`).join('')}</div>`:
+          `<div style="display:flex;gap:4px">${mdays.map(d=>`<span class="day-pill active">يوم ${d}</span>`).join('')}</div>`}
+        ${eng?`<span class="eng-badge">👷 ${eng.name}</span>`:''}
+        ${nextDate?`<span style="font-size:.62rem;color:var(--qual);background:var(--qg);padding:2px 8px;border-radius:4px;font-weight:700">📅 القادمة: ${nextDate} — ${DAY_AR[new Date(nextDate+'T12:00:00').getDay()]}</span>`:''}
+      </div>
+      ${sc.notes?`<div style="padding:7px 15px;font-size:.64rem;color:var(--muted);border-top:1px solid var(--border)">📝 ${sc.notes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════
+// SCHEDULE MODAL
+// ══════════════════════
+function openSchedModal(id=null){
+  editSchedId=id;
+  document.querySelectorAll('.ds-btn').forEach(b=>b.classList.remove('on'));
+  ['smSite','smEngineer','smNotes','smMonthDays'].forEach(k=>document.getElementById(k).value='');
+  document.getElementById('smFreq').value='weekly';
+  document.getElementById('smDeleteBtn').style.display='none';
+  document.getElementById('schedModalTitle').textContent=id?'✏️ تعديل الجدول':'📋 إضافة جدول ثابت';
+  if(id){
+    const sc=schedules.find(x=>x.id===id);
+    if(sc){
+      document.getElementById('smSite').value=sc.site_id||'';
+      document.getElementById('smEngineer').value=sc.engineer_id||'';
+      document.getElementById('smFreq').value=sc.freq_type||'weekly';
+      document.getElementById('smNotes').value=sc.notes||'';
+      if(sc.month_days?.length) document.getElementById('smMonthDays').value=sc.month_days.join(',');
+      (sc.week_days||[]).map(Number).forEach(d=>{
+        document.querySelector(`.ds-btn[data-d="${d}"]`)?.classList.add('on');
+      });
+      document.getElementById('smDeleteBtn').style.display='block';
+    }
+  }
+  toggleFreqFields();
+  document.getElementById('schedOverlay').classList.add('open');
+}
+function closeSchedModal(){document.getElementById('schedOverlay').classList.remove('open');editSchedId=null;}
+document.getElementById('schedOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('schedOverlay'))closeSchedModal();});
+function toggleDay(btn){btn.classList.toggle('on');}
+function toggleFreqFields(){
+  const freq=document.getElementById('smFreq').value;
+  document.getElementById('weekDaysRow').style.display=(freq==='weekly'||freq==='biweekly')?'':'none';
+  document.getElementById('monthDaysRow').style.display=(freq==='monthly_once'||freq==='monthly_twice')?'':'none';
+}
+
+async function saveSchedule(){
+  const siteId=document.getElementById('smSite').value;
+  if(!siteId){showToast('⚠️ اختر الموقع أولاً','t-err');return;}
+  const freq=document.getElementById('smFreq').value;
+  const weekDays=[...document.querySelectorAll('.ds-btn.on')].map(b=>parseInt(b.dataset.d));
+  const mdRaw=document.getElementById('smMonthDays').value;
+  const monthDays=mdRaw?mdRaw.split(',').map(x=>parseInt(x.trim())).filter(n=>n>0&&n<=31):[];
+  const payload={site_id:siteId,engineer_id:document.getElementById('smEngineer').value||null,
+    freq_type:freq,week_days:weekDays,month_days:monthDays,
+    notes:document.getElementById('smNotes').value.trim(),is_active:true};
+  if(editSchedId){
+    const{error}=await db.from('site_schedules').update(payload).eq('id',editSchedId);
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+    const idx=schedules.findIndex(x=>x.id===editSchedId);
+    if(idx>-1) schedules[idx]={...schedules[idx],...payload};
+  } else {
+    const{data,error}=await db.from('site_schedules').insert([payload]).select().single();
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+    schedules.unshift(data);
+  }
+  closeSchedModal();renderScheduleCards();renderMonthly();
+  showToast('✅ تم حفظ الجدول','t-ok');
+}
+
+async function deleteSchedule(){
+  if(!confirm('حذف هذا الجدول الثابت؟'))return;
+  const{error}=await db.from('site_schedules').delete().eq('id',editSchedId);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  schedules=schedules.filter(x=>x.id!==editSchedId);
+  closeSchedModal();renderScheduleCards();renderMonthly();
+  showToast('🗑️ تم الحذف','t-ok');
+}
+
+// ══════════════════════
+// DATE GENERATION
+// ══════════════════════
+function generateDates(sc, fromDateStr, count=60){
+  const results=[];
+  const freq=sc.freq_type;
+  const weekDays=(sc.week_days||[]).map(Number);
+  const monthDays=(sc.month_days||[]).map(Number);
+  const from=new Date(fromDateStr+'T12:00:00');
+
+  if(freq==='daily'){
+    let d=new Date(from);d.setDate(d.getDate()+1);
+    while(results.length<count){results.push(d.toISOString().split('T')[0]);d.setDate(d.getDate()+1);}
+  }
+  else if(freq==='weekly'){
+    if(!weekDays.length) return [];
+    let cur=new Date(from);cur.setDate(cur.getDate()+1);
+    const end=new Date(from);end.setFullYear(end.getFullYear()+2);
+    while(cur<=end&&results.length<count){
+      if(weekDays.includes(cur.getDay())) results.push(cur.toISOString().split('T')[0]);
+      cur.setDate(cur.getDate()+1);
+    }
+  }
+  else if(freq==='biweekly'){
+    if(!weekDays.length) return [];
+    // collect all weekly occurrences then keep every other one
+    const all=[];
+    let cur=new Date(from);cur.setDate(cur.getDate()+1);
+    const end=new Date(from);end.setFullYear(end.getFullYear()+2);
+    while(cur<=end&&all.length<count*2){
+      if(weekDays.includes(cur.getDay())) all.push(cur.toISOString().split('T')[0]);
+      cur.setDate(cur.getDate()+1);
+    }
+    return all.filter((_,i)=>i%2===0).slice(0,count);
+  }
+  else if(freq==='monthly_once'||freq==='monthly_twice'){
+    if(!monthDays.length) return [];
+    const end=new Date(from);end.setFullYear(end.getFullYear()+2);
+    let y=from.getFullYear(),m=from.getMonth();
+    while(results.length<count){
+      const newDate=new Date(y,m+1,0);// last day of month
+      monthDays.slice().sort((a,b)=>a-b).forEach(day=>{
+        const d=new Date(y,m,Math.min(day,newDate.getDate()));
+        if(d>from&&d<=end&&results.length<count) results.push(d.toISOString().split('T')[0]);
+      });
+      m++;if(m>11){m=0;y++;}
+      if(new Date(y,m,1)>end) break;
+    }
+  }
+  return results;
+}
+
+// ══════════════════════
+// MONTHLY TABLE
+// ══════════════════════
+function shiftMonth(dir){
+  const mSel=document.getElementById('mMonth');
+  const ySel=document.getElementById('mYear');
+  let m=parseInt(mSel.value)+dir, y=parseInt(ySel.value);
+  if(m>11){m=0;y++;}else if(m<0){m=11;y--;}
+  mSel.value=m;ySel.value=y;renderMonthly();
+}
+
+function renderMonthly(){
+  const month=parseInt(document.getElementById('mMonth').value);
+  const year=parseInt(document.getElementById('mYear').value);
+  if(isNaN(month)||isNaN(year))return;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const today=new Date().toISOString().split('T')[0];
+
+  // Build header
+  const thead=document.getElementById('monthHead');
+  thead.innerHTML=`<th>الموقع</th>`+
+    Array.from({length:daysInMonth},(_,i)=>{
+      const d=new Date(year,month,i+1);
+      const ds=`${monthStr}-${String(i+1).padStart(2,'0')}`;
+      const isToday=ds===today;
+      const isWknd=d.getDay()===5||d.getDay()===6;
+      return `<th style="min-width:46px;${isToday?'color:var(--ops);font-weight:900;':''}${isWknd?'opacity:.35;':''}">${i+1}<div style="font-size:.44rem;opacity:.7;margin-top:1px">${DAY_AR[d.getDay()]}</div></th>`;
+    }).join('');
+
+  const tbody=document.getElementById('monthBody');
+  if(!schedules.length){
+    tbody.innerHTML=`<tr><td colspan="${daysInMonth+1}" style="text-align:center;padding:24px;color:var(--muted)">أضف جدول ثابت لموقع أولاً</td></tr>`;
+    return;
+  }
+
+  const prevMonthEnd=new Date(year,month,0).toISOString().split('T')[0];
+  const monthVisits=visits.filter(v=>v.scheduled_date?.startsWith(monthStr));
+
+  tbody.innerHTML=schedules.map(sc=>{
+    const site=sites.find(s=>s.id===sc.site_id);
+    const defEng=engineers.find(e=>e.id===sc.engineer_id);
+    if(!site) return '';
+
+    // Predicted dates for this month
+    const predicted=generateDates(sc,prevMonthEnd,60).filter(d=>d.startsWith(monthStr));
+    const realDates=new Set(monthVisits.filter(v=>v.site_id===site.id).map(v=>v.scheduled_date));
+
+    const cells=Array.from({length:daysInMonth},(_,d)=>{
+      const dayNum=d+1;
+      const dayStr=`${monthStr}-${String(dayNum).padStart(2,'0')}`;
+      const isToday=dayStr===today;
+      const tdCls=isToday?'cell-today':'';
+
+      const realVisit=monthVisits.find(v=>v.site_id===site.id&&v.scheduled_date===dayStr);
+      if(realVisit){
+        const clsMap={scheduled:'cv-sched',completed:'cv-done',postponed:'cv-post',cancelled:'cv-cancel'};
+        const lblMap={scheduled:'م',completed:'✓',postponed:'⏰',cancelled:'✕'};
+        // get engineer names
+        const veList=visitEngineers.filter(x=>x.visit_id===realVisit.id);
+        const engNames=veList.map(ve=>engineers.find(e=>e.id===ve.engineer_id)?.name?.split(' ')[0]||'').filter(Boolean).join('/');
+        return `<td class="${tdCls}"><div class="cell-visit ${clsMap[realVisit.status]||'cv-sched'}" onclick="openVisitEdit('${realVisit.id}')" title="${site.name} — ${DAY_AR[new Date(dayStr+'T12:00:00').getDay()]}\n${engNames||defEng?.name||''}">${lblMap[realVisit.status]||'م'}${engNames?` <span style="font-size:.55rem">${engNames}</span>`:''}</div></td>`;
+      }
+
+      if(predicted.includes(dayStr)){
+        const engName=defEng?.name?.split(' ')[0]||'';
+        return `<td class="${tdCls}"><div class="cell-visit cv-pred" onclick="createVisitFromPred('${site.id}','${dayStr}','${sc.id}')" title="زيارة متوقعة — اضغط لجدولة\n${engName}">+${engName?` <span style="font-size:.55rem">${engName}</span>`:''}</div></td>`;
+      }
+
+      return `<td class="${tdCls}"></td>`;
+    }).join('');
+
+    const siteName=site.name.length>16?site.name.slice(0,15)+'…':site.name;
+    const siteVisits=monthVisits.filter(v=>v.site_id===site.id);
+    const done=siteVisits.filter(v=>v.status==='completed').length;
+    return `<tr>
+      <td title="${site.name}">
+        <div style="font-size:.72rem;font-weight:800">${siteName}</div>
+        <div style="font-size:.57rem;color:var(--muted);margin-top:1px">${done} مكتمل${defEng?` · ${defEng.name.split(' ')[0]}`:''}</div>
+      </td>
+      ${cells}
+    </tr>`;
+  }).filter(Boolean).join('');
+}
+
+// ══════════════════════
+// GENERATE MONTH VISITS
+// ══════════════════════
+async function generateMonthVisits(){
+  const month=parseInt(document.getElementById('mMonth').value);
+  const year=parseInt(document.getElementById('mYear').value);
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const prevEnd=new Date(year,month,0).toISOString().split('T')[0];
+  const existing=new Set(visits.filter(v=>v.scheduled_date?.startsWith(monthStr)).map(v=>v.site_id+'_'+v.scheduled_date));
+  const toInsert=[];
+  schedules.forEach(sc=>{
+    generateDates(sc,prevEnd,60).filter(d=>d.startsWith(monthStr)).forEach((date,i)=>{
+      if(!existing.has(sc.site_id+'_'+date)) toInsert.push({site_id:sc.site_id,scheduled_date:date,status:'scheduled',visit_number:i+1});
+    });
+  });
+  if(!toInsert.length){showToast('✅ كل الزيارات موجودة بالفعل','t-info');return;}
+  if(!confirm(`سيتم إنشاء ${toInsert.length} زيارة لهذا الشهر — موافق؟`))return;
+  const{data,error}=await db.from('visits').insert(toInsert).select();
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  // Add default engineers
+  const engInserts=[];
+  data.forEach(v=>{
+    const sc=schedules.find(x=>x.site_id===v.site_id);
+    if(sc?.engineer_id) engInserts.push({visit_id:v.id,engineer_id:sc.engineer_id});
+  });
+  if(engInserts.length) await db.from('visit_engineers').insert(engInserts);
+  visits=[...(data||[]),...visits];
+  visitEngineers=[...visitEngineers,...engInserts.map((x,i)=>({...x,id:'g'+i}))];
+  renderMonthly();
+  showToast(`⚡ تم إنشاء ${toInsert.length} زيارة`,'t-ok');
+}
+
+// ══════════════════════
+// VISIT EDIT MODAL
+// ══════════════════════
+function openVisitEdit(visitId){
+  editVisitId=visitId;
+  const v=visits.find(x=>x.id===visitId);
+  if(!v) return;
+  const site=sites.find(s=>s.id===v.site_id);
+  document.getElementById('veTitle').textContent=`✏️ ${site?.name||''} — ${v.scheduled_date||''}`;
+  document.getElementById('veDate').value=v.scheduled_date||'';
+  document.getElementById('veNum').value=v.visit_number||'';
+  document.getElementById('veStatus').value=v.status||'scheduled';
+  document.getElementById('veNotes').value=v.general_notes||'';
+  // Build multi engineer selector with current selection
+  const currentEngs=visitEngineers.filter(x=>x.visit_id===visitId).map(x=>x.engineer_id);
+  buildEngSelector('veEngSelector', currentEngs);
+  document.getElementById('visitEditOverlay').classList.add('open');
+}
+function closeVisitEdit(){document.getElementById('visitEditOverlay').classList.remove('open');editVisitId=null;}
+document.getElementById('visitEditOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('visitEditOverlay'))closeVisitEdit();});
+
+async function saveVisitEdit(){
+  const newDate=document.getElementById('veDate').value;
+  if(!newDate){showToast('⚠️ أدخل التاريخ','t-err');return;}
+  const payload={
+    scheduled_date:newDate,
+    visit_number:parseInt(document.getElementById('veNum').value)||null,
+    status:document.getElementById('veStatus').value,
+    general_notes:document.getElementById('veNotes').value.trim()
+  };
+  const{error}=await db.from('visits').update(payload).eq('id',editVisitId);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+
+  // Update engineers
+  const selEngs=getSelectedEngs('veEngSelector');
+  await db.from('visit_engineers').delete().eq('visit_id',editVisitId);
+  if(selEngs.length) await db.from('visit_engineers').insert(selEngs.map(eid=>({visit_id:editVisitId,engineer_id:eid})));
+
+  // Update local data
+  const idx=visits.findIndex(x=>x.id===editVisitId);
+  if(idx>-1) visits[idx]={...visits[idx],...payload};
+  visitEngineers=visitEngineers.filter(x=>x.visit_id!==editVisitId);
+  selEngs.forEach((eid,i)=>visitEngineers.push({visit_id:editVisitId,engineer_id:eid,id:'ve'+Date.now()+i}));
+  closeVisitEdit();renderMonthly();
+  showToast('✅ تم حفظ التعديل','t-ok');
+}
+
+async function deleteVisitEdit(){
+  if(!confirm('حذف هذه الزيارة؟'))return;
+  await db.from('visit_engineers').delete().eq('visit_id',editVisitId);
+  await db.from('visits').delete().eq('id',editVisitId);
+  visits=visits.filter(x=>x.id!==editVisitId);
+  visitEngineers=visitEngineers.filter(x=>x.visit_id!==editVisitId);
+  closeVisitEdit();renderMonthly();
+  showToast('🗑️ تم الحذف','t-ok');
+}
+
+async function createVisitFromPred(siteId, date, schedId){
+  const sc=schedules.find(x=>x.id===schedId);
+  const monthStr=date.slice(0,7);
+  const existingNum=visits.filter(v=>v.site_id===siteId&&v.scheduled_date?.startsWith(monthStr)).length;
+  const{data,error}=await db.from('visits').insert([{
+    site_id:siteId,scheduled_date:date,status:'scheduled',visit_number:existingNum+1
+  }]).select().single();
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  visits.unshift(data);
+  if(sc?.engineer_id){
+    await db.from('visit_engineers').insert([{visit_id:data.id,engineer_id:sc.engineer_id}]);
+    visitEngineers.push({visit_id:data.id,engineer_id:sc.engineer_id,id:'cv'+Date.now()});
+  }
+  renderMonthly();
+  showToast('📋 تم جدولة الزيارة — اضغط عليها لتعديلها','t-ok');
+}
+
+// ══════════════════════
+// WORK PLAN
+// ══════════════════════
+function openWP(siteId){
+  wpSiteId=siteId;
+  const site=sites.find(s=>s.id===siteId);
+  document.getElementById('wpTitle').textContent=`📄 خطة العمل — ${site?.name||''}`;
+  document.getElementById('wpText').value=site?.work_plan_text||'';
+  document.getElementById('pdfStatus').textContent='';
+  document.getElementById('pdfLinkArea').innerHTML=site?.work_plan_pdf?
+    `<a href="${site.work_plan_pdf}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.2);border-radius:6px;padding:4px 10px;font-size:.7rem;font-weight:700;text-decoration:none">📄 عرض PDF الحالي</a>
+     <button onclick="removePdf('${siteId}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.7rem;margin-right:5px">✕ حذف</button>`:'';
+  document.getElementById('wpOverlay').classList.add('open');
+}
+function closeWP(){document.getElementById('wpOverlay').classList.remove('open');wpSiteId=null;}
+document.getElementById('wpOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('wpOverlay'))closeWP();});
+
+async function handlePdfUpload(input){
+  const file=input.files[0];if(!file)return;
+  const stat=document.getElementById('pdfStatus');
+  stat.textContent='⏳ جاري الرفع...';
+  const path=`workplans/${wpSiteId}_${Date.now()}.pdf`;
+  const{error}=await db.storage.from('work-plans').upload(path,file,{upsert:true});
+  if(error){stat.textContent='❌ '+error.message;return;}
+  const{data:urlData}=db.storage.from('work-plans').getPublicUrl(path);
+  const url=urlData.publicUrl;
+  await db.from('sites').update({work_plan_pdf:url}).eq('id',wpSiteId);
+  const s=sites.find(x=>x.id===wpSiteId);if(s)s.work_plan_pdf=url;
+  stat.textContent='✅ تم الرفع بنجاح';
+  document.getElementById('pdfLinkArea').innerHTML=`<a href="${url}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.2);border-radius:6px;padding:4px 10px;font-size:.7rem;font-weight:700;text-decoration:none">📄 عرض PDF</a>`;
+}
+
+async function saveWorkPlan(){
+  const text=document.getElementById('wpText').value.trim();
+  const{error}=await db.from('sites').update({work_plan_text:text}).eq('id',wpSiteId);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  const s=sites.find(x=>x.id===wpSiteId);if(s)s.work_plan_text=text;
+  closeWP();renderScheduleCards();
+  showToast('✅ تم حفظ خطة العمل','t-ok');
+}
+
+async function removePdf(siteId){
+  if(!confirm('حذف PDF؟'))return;
+  await db.from('sites').update({work_plan_pdf:null}).eq('id',siteId);
+  const s=sites.find(x=>x.id===siteId);if(s)s.work_plan_pdf=null;
+  document.getElementById('pdfLinkArea').innerHTML='';
+  showToast('🗑️ تم','t-ok');
+}
+
+// ══════════════════════
+// EXPORT
+// ══════════════════════
+function exportMonthlyCSV(){
+  const month=parseInt(document.getElementById('mMonth').value);
+  const year=parseInt(document.getElementById('mYear').value);
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const prevEnd=new Date(year,month,0).toISOString().split('T')[0];
+  const monthVisits=visits.filter(v=>v.scheduled_date?.startsWith(monthStr));
+  const stMap={scheduled:'مجدولة',completed:'مكتملة',postponed:'مؤجلة',cancelled:'ملغية'};
+  const rows=[['الموقع','التاريخ','اليوم','المهندسون','الحالة','رقم الزيارة','ملاحظات']];
+  schedules.forEach(sc=>{
+    const site=sites.find(s=>s.id===sc.site_id);
+    const predicted=generateDates(sc,prevEnd,60).filter(d=>d.startsWith(monthStr));
+    const allDates=new Set([...monthVisits.filter(v=>v.site_id===sc.site_id).map(v=>v.scheduled_date),...predicted]);
+    [...allDates].sort().forEach(date=>{
+      const v=monthVisits.find(x=>x.site_id===sc.site_id&&x.scheduled_date===date);
+      const veList=v?visitEngineers.filter(x=>x.visit_id===v.id):[];
+      const engNames=veList.map(ve=>engineers.find(e=>e.id===ve.engineer_id)?.name||'').filter(Boolean).join(' / ')||engineers.find(e=>e.id===sc.engineer_id)?.name||'';
+      rows.push([site?.name||'',date,DAY_AR[new Date(date+'T12:00:00').getDay()],engNames,v?stMap[v.status]:'متوقعة',v?.visit_number||'',v?.general_notes||'']);
+    });
+  });
+  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`جدول_${monthStr}.csv`;a.click();
+  showToast('✅ تم التصدير','t-ok');
+}
+
+// ══════════════════════
+// UTILS
+// ══════════════════════
+function showToast(msg,cls='t-ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=`toast ${cls} show`;
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function hideLoad(){
+  const el=document.getElementById('loadOv');
+  if(!el)return;el.classList.add('hide');setTimeout(()=>{if(el.parentNode)el.remove();},400);
+}
+
+init();
+</script>
+</body>
+</html>

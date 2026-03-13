@@ -245,6 +245,7 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 <header>
   <div class="logo">🏢 نظام المواقع والزيارات</div>
   <div class="hdr-r">
+    <a href="schedules.html" class="back-btn">📅 الجداول</a>
     <a href="email-reports.html" class="back-btn">📧 الإيميلات</a>
     <a href="index.html" class="back-btn">← الداش بورد</a>
   </div>
@@ -389,7 +390,21 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
       <div class="fr" style="margin:0"><label class="flbl">نهاية العقد</label><input class="finput" id="sEnd" type="date"></div>
     </div>
     <div class="fr"><label class="flbl">ملاحظات</label><textarea class="ftxt" id="sNotes" placeholder="أي ملاحظات..."></textarea></div>
+    <!-- خطة العمل -->
+    <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:12px">
+      <div style="font-size:.72rem;font-weight:800;color:var(--ops);margin-bottom:10px">📄 خطة العمل</div>
+      <div style="font-size:.68rem;color:var(--muted);margin-bottom:8px">رفع PDF</div>
+      <div style="border:2px dashed rgba(255,255,255,.1);border-radius:8px;padding:12px;text-align:center;cursor:pointer;position:relative;transition:border-color .2s" id="siteWpUploadArea">
+        <input type="file" accept="application/pdf" id="sWpPdf" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%" onchange="handleSiteWpPdf(this)">
+        <div style="font-size:.72rem;color:var(--muted)">اسحب PDF أو اضغط للاختيار</div>
+        <div id="sWpPdfStatus" style="font-size:.68rem;color:var(--ops);margin-top:4px"></div>
+      </div>
+      <div id="sWpPdfLink" style="margin-top:6px"></div>
+      <div style="font-size:.68rem;color:var(--muted);margin:10px 0 6px">نص خطة العمل</div>
+      <textarea class="ftxt" id="sWpText" placeholder="اكتب خطة العمل هنا..." style="min-height:90px"></textarea>
+    </div>
     <button class="sbtn sbtn-ops" onclick="saveSite()">💾 حفظ الموقع</button>
+    <button class="sbtn" id="sDeleteBtn" style="display:none;margin-top:7px;background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.25)" onclick="deleteSite()">🗑️ حذف هذا الموقع</button>
   </div>
 </div>
 
@@ -485,6 +500,7 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
     </div>
     <div class="fr"><label class="flbl">العنوان</label><input class="finput" id="eAddr" placeholder="عنوان المهندس"></div>
     <button class="sbtn sbtn-blue" onclick="saveEngineer()">💾 حفظ المهندس</button>
+    <button class="sbtn" id="eDeleteBtn" style="display:none;margin-top:7px;background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.25)" onclick="deleteEngineer()">🗑️ حذف المهندس</button>
   </div>
 </div>
 
@@ -619,7 +635,9 @@ async function saveSite(){
     client_name:document.getElementById('sClient').value.trim(),client_phone:document.getElementById('sPhone').value.trim(),
     client_email:document.getElementById('sEmail').value.trim(),agreed_visits:parseInt(document.getElementById('sAgreed').value)||0,
     visit_frequency:document.getElementById('sFreq').value,contract_start:document.getElementById('sStart').value||null,
-    contract_end:document.getElementById('sEnd').value||null,notes:document.getElementById('sNotes').value.trim()};
+    contract_end:document.getElementById('sEnd').value||null,notes:document.getElementById('sNotes').value.trim(),
+    work_plan_text:document.getElementById('sWpText').value.trim()||null};
+  if(window._pendingWpPdf){payload.work_plan_pdf=window._pendingWpPdf;window._pendingWpPdf=null;}
   const{error}=editSiteId ? await db.from('sites').update(payload).eq('id',editSiteId) : await db.from('sites').insert([payload]);
   if(error){showToast('❌ '+error.message,'t-err');return;}
   if(editSiteId){
@@ -1171,6 +1189,55 @@ async function exportScheduleExcel(){
   const csv='\uFEFF'+[headers,...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`جدول_${monthStr}.csv`;a.click();
   showToast('✅ تم التصدير','t-ok');
+}
+
+// ════════════════════════════════
+// DELETE SITE
+// ════════════════════════════════
+async function deleteSite(){
+  if(!editSiteId)return;
+  const site=allSites.find(x=>x.id===editSiteId);
+  if(!confirm(`حذف موقع "${site?.name}"؟\nسيتم حذف كل الزيارات والبيانات المرتبطة به.`))return;
+  const{error}=await db.from('sites').update({is_active:false}).eq('id',editSiteId);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  allSites=allSites.filter(x=>x.id!==editSiteId);
+  sites=allSites;
+  allVisits=allVisits.filter(v=>v.site_id!==editSiteId);
+  visits=allVisits;
+  closeSiteModal();renderSites();renderVisits();renderSchedule();
+  showToast('🗑️ تم حذف الموقع','t-ok');
+}
+
+// ════════════════════════════════
+// DELETE ENGINEER
+// ════════════════════════════════
+async function deleteEngineer(){
+  if(!editEngId)return;
+  const eng=allEngineers.find(x=>x.id===editEngId);
+  if(!confirm(`حذف المهندس "${eng?.name}"؟`))return;
+  const{error}=await db.from('engineers').update({is_active:false}).eq('id',editEngId);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  allEngineers=allEngineers.filter(x=>x.id!==editEngId);
+  engineers=allEngineers;
+  closeEngModal();renderEngineers();renderScores();populateEngSelector();
+  showToast('🗑️ تم حذف المهندس','t-ok');
+}
+
+// ════════════════════════════════
+// WORK PLAN PDF UPLOAD (site modal)
+// ════════════════════════════════
+async function handleSiteWpPdf(input){
+  const file=input.files[0];if(!file)return;
+  const stat=document.getElementById('sWpPdfStatus');
+  stat.textContent='⏳ جاري الرفع...';
+  const siteId=editSiteId||('new_'+Date.now());
+  const path=`workplans/${siteId}_${Date.now()}.pdf`;
+  const{data,error}=await db.storage.from('work-plans').upload(path,file,{upsert:true});
+  if(error){stat.textContent='❌ '+error.message;return;}
+  const{data:urlData}=db.storage.from('work-plans').getPublicUrl(path);
+  window._pendingWpPdf=urlData.publicUrl;
+  stat.textContent='✅ جاهز للحفظ';
+  document.getElementById('sWpPdfLink').innerHTML=`<a href="${urlData.publicUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.2);border-radius:6px;padding:3px 9px;font-size:.68rem;font-weight:700;text-decoration:none;margin-top:4px">📄 معاينة PDF</a>`;
 }
 
 // ════════════════════════════════
