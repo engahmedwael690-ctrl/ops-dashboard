@@ -423,6 +423,15 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
     <div class="fr"><label class="flbl">المهندسون المشاركون</label>
       <div class="eng-selector" id="engSelector"></div>
     </div>
+    <div class="fr" id="vStatusRow" style="display:none">
+      <label class="flbl">الحالة</label>
+      <select class="fsel" id="vStatus">
+        <option value="scheduled">📋 مجدولة</option>
+        <option value="completed">✅ مكتملة</option>
+        <option value="postponed">⏰ مؤجلة</option>
+        <option value="cancelled">❌ ملغية</option>
+      </select>
+    </div>
     <div class="fr"><label class="flbl">ملاحظات الزيارة</label><textarea class="ftxt" id="vNotes" placeholder="ملاحظات..."></textarea></div>
     <button class="sbtn sbtn-blue" onclick="saveVisit()">💾 حفظ الزيارة</button>
   </div>
@@ -528,6 +537,7 @@ const {createClient}=supabase;
 const db=createClient(SB_URL,SB_KEY);
 
 let sites=[],visits=[],engineers=[],visitEngineers=[],visitPhotos=[],followups=[];
+let allVisitEngineers=[];
 let activeSiteId=null,activeVisitId=null,activeEngId=null;
 let visitFilter='all';
 let allSites=[],allVisits=[],allEngineers=[];
@@ -551,7 +561,7 @@ async function loadAll(){
   sites=allSites=s.data||[];
   visits=allVisits=v.data||[];
   engineers=allEngineers=e.data||[];
-  visitEngineers=ve.data||[];
+  visitEngineers=ve.data||[];allVisitEngineers=visitEngineers;
   renderSites();renderVisits();renderEngineers();renderScores();renderSchedule();
   populateSiteDropdown();populateEngSelector();
 }
@@ -597,6 +607,10 @@ function renderSites(){
         <div class="visit-progress">
           <div class="vp-label"><span>الإنجاز</span><span style="color:var(--ops)">${pct}%</span></div>
           <div class="vp-bar"><div class="vp-fill" style="width:${pct}%;background:${pct>=100?'var(--ops)':'var(--blue)'}"></div></div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSiteModal('${s.id}')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="event.stopPropagation();quickDeleteSite('${s.id}','${s.name.replace(/'/g,'')}')">🗑️</button>
         </div>
       </div>
     </div>`;
@@ -749,6 +763,7 @@ function renderVisits(){
       ${v.postpone_reason?`<div style="font-size:.65rem;color:var(--qual)">⏰ سبب التأجيل: ${v.postpone_reason}${v.postponed_to?' → '+v.postponed_to:''}</div>`:''}
       ${v.cancel_reason?`<div style="font-size:.65rem;color:var(--red)">❌ سبب الإلغاء: ${v.cancel_reason}</div>`:''}
       <div class="visit-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openVisitModal('${v.id}')">✏️ تعديل</button>
         ${v.status==='scheduled'?`
           <button class="btn btn-ops btn-sm" onclick="completeVisit('${v.id}')">✅ إتمام</button>
           <button class="btn btn-yellow btn-sm" onclick="openPostpone('${v.id}')">⏰ تأجيل</button>
@@ -805,6 +820,28 @@ function openVisitModal(id=null){
   document.getElementById('vNum').value='';document.getElementById('vNotes').value='';
   document.querySelectorAll('.eng-toggle').forEach(b=>b.classList.remove('sel'));
   document.getElementById('visitModalTitle').textContent=id?'✏️ تعديل الزيارة':'📋 إضافة زيارة';
+  // إضافة زرار حالة + بيانات الزيارة إن كان تعديل
+  const statusRow=document.getElementById('vStatusRow');
+  if(id){
+    const v=allVisits.find(x=>x.id===id);
+    if(v){
+      document.getElementById('vSite').value=v.site_id||'';
+      document.getElementById('vDate').value=v.scheduled_date||'';
+      document.getElementById('vNum').value=v.visit_number||'';
+      document.getElementById('vNotes').value=v.general_notes||'';
+      document.getElementById('vStatus').value=v.status||'scheduled';
+      // تحديد المهندسين الحاليين
+      const currentEngs=allVisitEngineers
+        ? allVisitEngineers.filter(ve=>ve.visit_id===id).map(ve=>ve.engineer_id)
+        : visitEngineers.filter(ve=>ve.visit_id===id).map(ve=>ve.engineer_id);
+      document.querySelectorAll('.eng-toggle').forEach(b=>{
+        if(currentEngs.includes(b.dataset.id)) b.classList.add('sel');
+      });
+    }
+    if(statusRow) statusRow.style.display='';
+  } else {
+    if(statusRow) statusRow.style.display='none';
+  }
   document.getElementById('visitOverlay').classList.add('open');
 }
 function closeVisitModal(){document.getElementById('visitOverlay').classList.remove('open');editVisitId=null;}
@@ -815,8 +852,10 @@ async function saveVisit(){
   const date=document.getElementById('vDate').value;
   if(!siteId||!date){showToast('⚠️ اختر الموقع والتاريخ','t-err');return;}
   const selEngs=[...document.querySelectorAll('.eng-toggle.sel')].map(b=>b.dataset.id);
+  const statusEl=document.getElementById('vStatus');
+  const status=editVisitId&&statusEl?statusEl.value:'scheduled';
   const payload={site_id:siteId,scheduled_date:date,visit_number:parseInt(document.getElementById('vNum').value)||null,
-    general_notes:document.getElementById('vNotes').value.trim(),status:'scheduled'};
+    general_notes:document.getElementById('vNotes').value.trim(),status};
   let vId=editVisitId;
   if(editVisitId){
     const{error}=await db.from('visits').update(payload).eq('id',editVisitId);
@@ -1194,6 +1233,19 @@ async function exportScheduleExcel(){
 // ════════════════════════════════
 // DELETE SITE
 // ════════════════════════════════
+async function quickDeleteSite(siteId, siteName){
+  if(!confirm(`حذف موقع "${siteName}"؟
+سيتم حذف كل الزيارات المرتبطة به.`))return;
+  const{error}=await db.from('sites').update({is_active:false}).eq('id',siteId);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  allSites=allSites.filter(x=>x.id!==siteId);
+  sites=allSites;
+  allVisits=allVisits.filter(v=>v.site_id!==siteId);
+  visits=allVisits;
+  renderSites();renderVisits();renderSchedule();
+  showToast('🗑️ تم حذف الموقع','t-ok');
+}
+
 async function deleteSite(){
   if(!editSiteId)return;
   const site=allSites.find(x=>x.id===editSiteId);
