@@ -280,12 +280,23 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
   </div>
   <div class="top-bar" style="flex-wrap:wrap;gap:10px">
     <div class="search-box">🔍 <input type="text" placeholder="ابحث بالموقع أو المهندس أو التاريخ..." id="visitSearch" oninput="renderVisits()" style="min-width:200px"></div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-ghost btn-sm act-filter" onclick="filterVisits('all',this)">الكل</button>
       <button class="btn btn-ghost btn-sm" onclick="filterVisits('scheduled',this)">مجدولة</button>
       <button class="btn btn-ghost btn-sm" onclick="filterVisits('completed',this)">مكتملة</button>
       <button class="btn btn-ghost btn-sm" onclick="filterVisits('postponed',this)">مؤجلة</button>
       <button class="btn btn-ghost btn-sm" onclick="filterVisits('cancelled',this)">ملغية</button>
+    </div>
+    <!-- فلتر التاريخ -->
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:5px;background:var(--surface2,var(--s2));border:1px solid var(--border);border-radius:8px;padding:5px 10px">
+        <span style="font-size:.72rem;color:var(--muted)">📅 من</span>
+        <input type="date" id="vDateFrom" class="finput" style="width:130px;padding:3px 7px;font-size:.75rem;border:none;background:transparent" onchange="renderVisits()">
+        <span style="font-size:.72rem;color:var(--muted)">إلى</span>
+        <input type="date" id="vDateTo" class="finput" style="width:130px;padding:3px 7px;font-size:.75rem;border:none;background:transparent" onchange="renderVisits()">
+        <button onclick="clearDateFilter()" id="vDateClearBtn" style="display:none;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.78rem;padding:0 3px" title="مسح الفلتر">✕</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="setTodayFilter()" title="زيارات اليوم">📍 اليوم</button>
     </div>
     <button class="btn btn-blue" onclick="openVisitModal()">+ إضافة زيارة</button>
   </div>
@@ -725,6 +736,22 @@ document.getElementById('siteDetailOverlay').addEventListener('click',e=>{if(e.t
 function renderVisits(){
   let list=allVisits;
   if(visitFilter!=='all') list=list.filter(v=>v.status===visitFilter);
+  // فلتر التاريخ
+  const dateFrom=document.getElementById('vDateFrom')?.value||'';
+  const dateTo=document.getElementById('vDateTo')?.value||'';
+  const clearBtn=document.getElementById('vDateClearBtn');
+  if(dateFrom||dateTo){
+    if(clearBtn) clearBtn.style.display='';
+    list=list.filter(v=>{
+      const d=v.scheduled_date||'';
+      if(dateFrom&&dateTo) return d>=dateFrom&&d<=dateTo;
+      if(dateFrom) return d>=dateFrom;
+      if(dateTo) return d<=dateTo;
+      return true;
+    });
+  } else {
+    if(clearBtn) clearBtn.style.display='none';
+  }
   // سيرش
   const q=(document.getElementById('visitSearch')?.value||'').toLowerCase().trim();
   if(q){
@@ -782,6 +809,17 @@ function filterVisits(f,el){
   visitFilter=f;
   document.querySelectorAll('.act-filter').forEach(b=>b.classList.remove('act-filter','btn-ops'));
   el.classList.add('act-filter','btn-ops');
+  renderVisits();
+}
+function setTodayFilter(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('vDateFrom').value=today;
+  document.getElementById('vDateTo').value=today;
+  renderVisits();
+}
+function clearDateFilter(){
+  document.getElementById('vDateFrom').value='';
+  document.getElementById('vDateTo').value='';
   renderVisits();
 }
 
