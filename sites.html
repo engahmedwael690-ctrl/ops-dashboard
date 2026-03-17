@@ -16,7 +16,19 @@
   --purple:#818cf8;--pg:rgba(129,140,248,.12);
   --text:#e2e8f0;--muted:#4a5568;--dim:#718096;
   --border:rgba(255,255,255,.06);--r:12px;
+  /* key account colors */
+  --ka1:#3b82f6;--ka2:#f59e0b;--ka3:#a855f7;--ka4:#ec4899;--ka5:#14b8a6;
 }
+body.light{
+  --bg:#f1f5f9;--s:#ffffff;--s2:#f8fafc;--s3:#e2e8f0;
+  --text:#0f172a;--muted:#94a3b8;--dim:#64748b;
+  --border:rgba(0,0,0,.08);
+  --og:rgba(0,180,130,.1);--blg:rgba(59,130,246,.1);
+  --qg:rgba(245,158,11,.1);--rdg:rgba(252,92,125,.1);--pg:rgba(168,85,247,.1);
+}
+body.light header{background:rgba(255,255,255,.96)}
+body.light .tbl th{background:#f1f5f9}
+body.light .site-card:hover{border-color:rgba(0,180,130,.3)}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
@@ -238,16 +250,19 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 }
 </style>
 </head>
-<body>
+<body class="light">
 
 <div class="load-ov" id="loadOv"><div class="spinner"></div><div style="font-size:.78rem;color:var(--muted)">جاري التحميل...</div></div>
 
 <header>
   <div class="logo">🏢 نظام المواقع والزيارات</div>
   <div class="hdr-r">
+    
+    <span id="hdrUserName" style="font-size:.72rem;color:var(--muted)"></span>
     <a href="schedules.html" class="back-btn">📅 الجداول</a>
     <a href="email-reports.html" class="back-btn">📧 الإيميلات</a>
     <a href="index.html" class="back-btn">← الداش بورد</a>
+    <a href="guide.html" class="back-btn">📖 الدليل</a>
   </div>
 </header>
 
@@ -265,6 +280,11 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 <div class="view show" id="view-sites">
   <div class="top-bar">
     <div class="search-box">🔍 <input type="text" placeholder="ابحث عن موقع..." id="siteSearch" oninput="filterSites()"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <select class="finput" id="siteKAFilter" style="width:auto;font-size:.75rem" onchange="filterSites()">
+        <option value="">الكل</option>
+      </select>
+    </div>
     <button class="btn btn-ops" onclick="openSiteModal()">+ إضافة موقع</button>
   </div>
   <div class="cards-grid" id="sitesGrid"></div>
@@ -382,6 +402,10 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
       <div class="fr" style="margin:0"><label class="flbl">المنطقة</label><input class="finput" id="sRegion" placeholder="القاهرة / الجيزة..."></div>
     </div>
     <div class="fr"><label class="flbl">العنوان</label><input class="finput" id="sAddress" placeholder="عنوان تفصيلي"></div>
+    <div class="fr">
+      <label class="flbl">👤 Key Account المسؤول</label>
+      <select class="fsel" id="sAssigned"><option value="">— غير محدد —</option></select>
+    </div>
     <div class="fr2" style="margin-top:12px">
       <div class="fr" style="margin:0"><label class="flbl">اسم المسؤول / العميل</label><input class="finput" id="sClient" placeholder="اسم العميل"></div>
       <div class="fr" style="margin:0"><label class="flbl">رقم الهاتف</label><input class="finput" id="sPhone" placeholder="01xxxxxxxxx"></div>
@@ -549,6 +573,8 @@ const db=createClient(SB_URL,SB_KEY);
 
 let sites=[],visits=[],engineers=[],visitEngineers=[],visitPhotos=[],followups=[];
 let allVisitEngineers=[];
+let currentUser=null, currentProfile=null, allUsers=[];
+const KA_COLORS=['#3b82f6','#f59e0b','#a855f7','#ec4899','#14b8a6'];
 let activeSiteId=null,activeVisitId=null,activeEngId=null;
 let visitFilter='all';
 let allSites=[],allVisits=[],allEngineers=[];
@@ -556,10 +582,50 @@ let allSites=[],allVisits=[],allEngineers=[];
 // ════════════════════════════════
 // INIT
 // ════════════════════════════════
+// ── LIGHT MODE ──
+function toggleLight(){
+  document.body.classList.toggle('light');
+  const btn=document.getElementById('themeBtn');
+  const isLight=document.body.classList.contains('light');
+  btn.textContent=isLight?'🌙':'☀️';
+  localStorage.setItem('siteTheme',isLight?'light':'dark');
+}
+(function(){
+  if(localStorage.getItem('siteTheme')==='light'){
+    document.body.classList.add('light');
+    setTimeout(()=>{const b=document.getElementById('themeBtn');if(b)b.textContent='🌙';},50);
+  }
+})();
+
 async function init(){
+  // Auth check
+  const{data:{session}}=await db.auth.getSession();
+  if(!session){window.location.href='index.html';return;}
+  currentUser=session.user;
+  const{data:prof}=await db.from('profiles').select('*').eq('id',currentUser.id).single();
+  currentProfile=prof;
+  const nameEl=document.getElementById('hdrUserName');
+  if(nameEl) nameEl.textContent=prof?.full_name||currentUser.email;
+
+  // Load all users for KA dropdown
+  const{data:usrs}=await db.from('profiles').select('id,full_name,email').order('full_name');
+  allUsers=usrs||[];
+  populateKADropdowns();
+  // ──────────────────────
   await loadAll();
   setupScheduleControls();
   hideLoad();
+}
+
+function populateKADropdowns(){
+  const opts=allUsers.map((u,i)=>`<option value="${u.id}" style="color:${KA_COLORS[i%KA_COLORS.length]}">${u.full_name||u.email}</option>`).join('');
+  // site modal
+  const saEl=document.getElementById('sAssigned');
+  if(saEl) saEl.innerHTML='<option value="">— غير محدد —</option>'+opts;
+  // filter dropdown
+  const fEl=document.getElementById('siteKAFilter');
+  if(fEl) fEl.innerHTML='<option value="">👥 الكل</option>'+
+    allUsers.map((u,i)=>`<option value="${u.id}">${u.full_name||u.email}</option>`).join('');
 }
 
 async function loadAll(){
@@ -591,8 +657,15 @@ function switchTab(name,el){
 // SITES
 // ════════════════════════════════
 function renderSites(){
-  const q=(document.getElementById('siteSearch').value||'').toLowerCase();
-  const list=sites.filter(s=>!q||s.name.toLowerCase().includes(q)||s.region?.toLowerCase().includes(q));
+  const q=(document.getElementById('siteSearch')?.value||'').toLowerCase();
+  const kaF=document.getElementById('siteKAFilter')?.value||'';
+  let list=allSites.length?allSites:sites;
+  // يوزر عادي يشوف مواقعه بس
+  if(currentProfile?.role!=='admin'&&currentUser){
+    list=list.filter(s=>s.assigned_to===currentUser.id||!s.assigned_to);
+  }
+  if(kaF) list=list.filter(s=>s.assigned_to===kaF);
+  if(q) list=list.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.region||'').toLowerCase().includes(q));
   const grid=document.getElementById('sitesGrid');
   if(!list.length){grid.innerHTML=`<div class="empty"><div class="empty-icon">🏢</div>لا توجد مواقع</div>`;return;}
   grid.innerHTML=list.map(s=>{
@@ -600,13 +673,16 @@ function renderSites(){
     const done=sVisits.filter(v=>v.status==='completed').length;
     const pct=s.agreed_visits?Math.round(done/s.agreed_visits*100):0;
     const remaining=Math.max(0,s.agreed_visits-done);
+    const kaIdx=allUsers.findIndex(u=>u.id===s.assigned_to);
+    const kaColor=kaIdx>=0?KA_COLORS[kaIdx%KA_COLORS.length]:'var(--ops)';
+    const kaName=kaIdx>=0?(allUsers[kaIdx].full_name||allUsers[kaIdx].email):'';
     return `<div class="site-card" onclick="openSiteDetail('${s.id}')">
-      <div class="site-card-top">
+      <div class="site-card-top" style="border-right:3px solid ${kaColor}">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div class="site-name">${s.name}</div>
           <div class="status-dot ${s.is_active?'sd-active':'sd-inactive'}"></div>
         </div>
-        <div class="site-region">📍 ${s.region||'—'} &nbsp;·&nbsp; ${s.address||''}</div>
+        <div class="site-region">📍 ${s.region||'—'}${kaName?` &nbsp;<span style="color:${kaColor};font-weight:800;font-size:.64rem">· 👤 ${kaName}</span>`:''}</div>
       </div>
       <div class="site-card-mid">
         <div class="site-info-item"><div>المسؤول</div><div class="site-info-val">${s.client_name||'—'}</div></div>
@@ -628,6 +704,7 @@ function renderSites(){
   }).join('');
 }
 function filterSites(){renderSites();}
+// exposed for select onchange
 
 let editSiteId=null;
 function openSiteModal(id=null){
@@ -661,7 +738,8 @@ async function saveSite(){
     client_email:document.getElementById('sEmail').value.trim(),agreed_visits:parseInt(document.getElementById('sAgreed').value)||0,
     visit_frequency:document.getElementById('sFreq').value,contract_start:document.getElementById('sStart').value||null,
     contract_end:document.getElementById('sEnd').value||null,notes:document.getElementById('sNotes').value.trim(),
-    work_plan_text:document.getElementById('sWpText').value.trim()||null};
+    work_plan_text:document.getElementById('sWpText').value.trim()||null,
+    assigned_to:document.getElementById('sAssigned').value||null};
   if(window._pendingWpPdf){payload.work_plan_pdf=window._pendingWpPdf;window._pendingWpPdf=null;}
   const{error}=editSiteId ? await db.from('sites').update(payload).eq('id',editSiteId) : await db.from('sites').insert([payload]);
   if(error){showToast('❌ '+error.message,'t-err');return;}

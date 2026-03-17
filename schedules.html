@@ -16,7 +16,19 @@
   --purple:#818cf8;--pg:rgba(129,140,248,.12);
   --text:#e2e8f0;--muted:#4a5568;--dim:#718096;
   --border:rgba(255,255,255,.06);--r:12px;
+  --ka1:#3b82f6;--ka2:#f59e0b;--ka3:#a855f7;--ka4:#ec4899;--ka5:#14b8a6;
 }
+body.light{
+  --bg:#f1f5f9;--s:#ffffff;--s2:#f8fafc;--s3:#e2e8f0;
+  --text:#0f172a;--muted:#94a3b8;--dim:#64748b;
+  --border:rgba(0,0,0,.08);
+  --og:rgba(0,180,130,.1);--blg:rgba(59,130,246,.1);
+  --qg:rgba(245,158,11,.1);--rdg:rgba(252,92,125,.1);--pg:rgba(168,85,247,.1);
+}
+body.light header{background:rgba(255,255,255,.96)}
+body.light .mtbl th{background:#e2e8f0;color:#334155}
+body.light .mtbl td:first-child{background:#f8fafc}
+body.light .sched-card{background:#fff}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
@@ -180,13 +192,16 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
 }
 </style>
 </head>
-<body>
+<body class="light">
 <div class="load-ov" id="loadOv"><div class="spinner"></div><div style="font-size:.76rem;color:var(--muted)">جاري التحميل...</div></div>
 <header>
   <div class="logo">📅 الجداول الثابتة</div>
   <div class="hdr-r">
+    
+    <span id="hdrUserName" style="font-size:.72rem;color:var(--muted)"></span>
     <a href="sites.html" class="back-btn">🏢 المواقع</a>
     <a href="index.html" class="back-btn">← الداش بورد</a>
+    <a href="guide.html" class="back-btn">📖 الدليل</a>
   </div>
 </header>
 <div class="tabs-bar">
@@ -218,6 +233,9 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
 <div class="view" id="view-schedules">
   <div class="top-bar">
     <div class="search-box">🔍 <input type="text" placeholder="ابحث عن موقع..." id="schedSearch" oninput="renderScheduleCards()"></div>
+    <select class="finput" id="schedKAFilter" style="width:auto;font-size:.75rem" onchange="renderScheduleCards()">
+      <option value="">👥 كل الأكونتات</option>
+    </select>
     <button class="btn btn-ops" onclick="openSchedModal()">+ إضافة جدول</button>
   </div>
   <div id="schedCards"></div>
@@ -388,11 +406,37 @@ const FREQ_CLS={weekly:'sf-weekly',biweekly:'sf-weekly',monthly_once:'sf-monthly
 
 let sites=[], engineers=[], schedules=[], visits=[], visitEngineers=[];
 let editSchedId=null, editVisitId=null, wpSiteId=null;
+let currentUser=null, currentProfile=null, allUsers=[];
+const KA_COLORS=['#3b82f6','#f59e0b','#a855f7','#ec4899','#14b8a6'];
+
+function toggleLight(){
+  document.body.classList.toggle('light');
+  const btn=document.getElementById('themeBtn');
+  const isLight=document.body.classList.contains('light');
+  btn.textContent=isLight?'🌙':'☀️';
+  localStorage.setItem('schedTheme',isLight?'light':'dark');
+}
+(function(){
+  if(localStorage.getItem('schedTheme')==='light'){
+    document.body.classList.add('light');
+    setTimeout(()=>{const b=document.getElementById('themeBtn');if(b)b.textContent='🌙';},50);
+  }
+})();
 
 // ══════════════════════
 // INIT
 // ══════════════════════
 async function init(){
+  const{data:{session}}=await db.auth.getSession();
+  if(!session){window.location.href='index.html';return;}
+  currentUser=session.user;
+  const{data:prof}=await db.from('profiles').select('*').eq('id',currentUser.id).single();
+  currentProfile=prof;
+  const nameEl=document.getElementById('hdrUserName');
+  if(nameEl) nameEl.textContent=prof?.full_name||currentUser.email;
+  const{data:usrs}=await db.from('profiles').select('id,full_name,email').order('full_name');
+  allUsers=usrs||[];
+
   const now=new Date();
   document.getElementById('mMonth').value=now.getMonth();
   const ySel=document.getElementById('mYear');
@@ -416,6 +460,12 @@ async function loadAll(){
   sites=s.data||[];engineers=e.data||[];schedules=sc.data||[];
   visits=v.data||[];visitEngineers=ve.data||[];
   populateDropdowns();
+  // populate KA filter
+  const kaEl=document.getElementById('schedKAFilter');
+  if(kaEl&&allUsers.length){
+    kaEl.innerHTML='<option value="">👥 كل الأكونتات</option>'+
+      allUsers.map(u=>`<option value="${u.id}">${u.full_name||u.email}</option>`).join('');
+  }
   renderScheduleCards();
   renderMonthly();
   renderToday();
@@ -459,6 +509,13 @@ function renderScheduleCards(){
   const q=(document.getElementById('schedSearch')?.value||'').toLowerCase();
   const el=document.getElementById('schedCards');
   let list=schedules;
+  // يوزر عادي يشوف مواقعه بس
+  if(currentProfile?.role!=='admin'&&currentUser){
+    const mySites=new Set(sites.filter(s=>s.assigned_to===currentUser.id||!s.assigned_to).map(s=>s.id));
+    list=list.filter(sc=>mySites.has(sc.site_id));
+  }
+  const kaF=document.getElementById('schedKAFilter')?.value||'';
+  if(kaF) list=list.filter(sc=>(sites.find(s=>s.id===sc.site_id)?.assigned_to===kaF));
   if(q) list=list.filter(sc=>(sites.find(s=>s.id===sc.site_id)?.name||'').toLowerCase().includes(q));
   if(!list.length){
     el.innerHTML=`<div class="empty"><div class="empty-icon">📋</div>${q?'لا نتائج':'لا توجد جداول — أضف جدول لموقع'}</div>`;
@@ -693,13 +750,16 @@ function renderMonthly(){
       return `<td class="${isToday?'col-today-cell':''} ${tdExtra}"></td>`;
     }).join('');
 
+    const kaIdx=allUsers.findIndex(u=>u.id===site.assigned_to);
+    const kaColor=kaIdx>=0?KA_COLORS[kaIdx%KA_COLORS.length]:'#00d4aa';
+    const kaName=kaIdx>=0?(allUsers[kaIdx].full_name||allUsers[kaIdx].email).split(' ')[0]:'';
     const siteName=site.name.length>18?site.name.slice(0,17)+'…':site.name;
     const siteVisits=monthVisits.filter(v=>v.site_id===site.id);
     const done=siteVisits.filter(v=>v.status==='completed').length;
     const total=siteVisits.filter(v=>v.status!=='cancelled').length;
     const pct=total?Math.round(done/total*100):0;
     return `<tr>
-      <td title="${site.name}">
+      <td title="${site.name}" style="border-right:3px solid ${kaColor}">
         <div style="font-size:.75rem;font-weight:800;margin-bottom:2px">${siteName}</div>
         <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
           <div style="flex:1;height:3px;background:var(--s3);border-radius:2px;overflow:hidden">
@@ -707,7 +767,8 @@ function renderMonthly(){
           </div>
           <span style="font-size:.55rem;color:var(--muted);white-space:nowrap">${done}/${total}</span>
         </div>
-        ${defEng?`<div style="font-size:.56rem;color:var(--dim);margin-top:2px">👷 ${defEng.name.split(' ').slice(0,2).join(' ')}</div>`:''}
+        ${kaName?`<div style="font-size:.55rem;font-weight:700;margin-top:2px;color:${kaColor}">👤 ${kaName}</div>`:''}
+        ${defEng?`<div style="font-size:.56rem;color:var(--dim);margin-top:1px">👷 ${defEng.name.split(' ').slice(0,2).join(' ')}</div>`:''}
       </td>
       ${cells}
     </tr>`;
