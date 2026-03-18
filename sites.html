@@ -1329,16 +1329,35 @@ async function saveVisit(){
     await db.from('visit_engineers').insert(selEngs.map(eid=>({visit_id:vId,engineer_id:eid})));
   }
   closeVisitModal();
-  await loadAll(); // visits need re-render with engineer names
+  // تحديث محلي بدون reload كامل
+  if(editVisitId){
+    const idx=allVisits.findIndex(x=>x.id===editVisitId);
+    if(idx>-1) allVisits[idx]={...allVisits[idx],...payload};
+    visitEngineers=visitEngineers.filter(x=>x.visit_id!==vId);
+    if(selEngs.length) selEngs.forEach((eid,i)=>visitEngineers.push({visit_id:vId,engineer_id:eid,id:'sv'+Date.now()+i}));
+  } else {
+    // جيب الزيارة الجديدة من الـ DB
+    const{data:newV}=await db.from('visits').select('*').eq('id',vId).single();
+    if(newV) allVisits.unshift(newV);
+    visitEngineers=visitEngineers.filter(x=>x.visit_id!==vId);
+    if(selEngs.length) selEngs.forEach((eid,i)=>visitEngineers.push({visit_id:vId,engineer_id:eid,id:'sv'+Date.now()+i}));
+  }
+  visits=allVisits;
+  renderVisits();renderSites();
   showToast('✅ تم حفظ الزيارة','t-ok');
 }
 
 async function completeVisit(id){
+  const today=new Date().toISOString().split('T')[0];
+  // DB أولاً — نتأكد من الحفظ قبل تحديث الـ UI
+  const{error}=await db.from('visits').update({status:'completed',actual_date:today}).eq('id',id);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  // تحديث محلي بعد نجاح الـ DB
   const _cv=allVisits.find(x=>x.id===id);
-  if(_cv){_cv.status='completed';_cv.actual_date=new Date().toISOString().split('T')[0];}
-  visits=allVisits;renderVisits();renderSchedule();
+  if(_cv){_cv.status='completed';_cv.actual_date=today;}
+  visits=allVisits;
+  renderVisits();
   showToast('✅ تم إتمام الزيارة','t-ok');
-  await db.from('visits').update({status:'completed',actual_date:new Date().toISOString().split('T')[0]}).eq('id',id);
 }
 
 // Postpone
