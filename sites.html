@@ -211,6 +211,44 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 .empty{padding:32px;text-align:center;color:var(--muted);font-size:.78rem}
 .empty-icon{font-size:2rem;opacity:.28;margin-bottom:8px}
 
+/* SUB-TABS */
+.stab{padding:8px 16px;border:none;background:transparent;color:var(--muted);font-family:'Cairo',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;white-space:nowrap;flex-shrink:0}
+.stab:hover{color:var(--text)}.stab.act{color:var(--ops);border-bottom-color:var(--ops)}
+.sview{display:none}.sview.show{display:block}
+/* MONTHLY TABLE */
+.mtbl{width:100%;border-collapse:separate;border-spacing:0;font-size:.72rem}
+.mtbl th{text-align:center;padding:8px 4px;background:#0d1829;color:#94a3b8;font-weight:800;font-size:.58rem;border-bottom:2px solid rgba(255,255,255,.08);white-space:nowrap;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.5);transition:background .15s,color .15s}
+.mtbl th:first-child{text-align:right;min-width:150px;padding:8px 14px;position:sticky;right:0;top:0;background:#0d1829;z-index:11;border-left:1px solid rgba(255,255,255,.05)}
+.mtbl th:not(:first-child):hover{background:#1e3a5f;color:#60a5fa;cursor:pointer}
+.mtbl td{padding:5px 3px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;vertical-align:middle;transition:background .12s}
+.mtbl td:first-child{text-align:right;padding:8px 14px;color:var(--text);white-space:nowrap;position:sticky;right:0;background:var(--s);z-index:1;border-left:1px solid rgba(255,255,255,.04)}
+.mtbl tr:hover td{background:rgba(255,255,255,.025)}.mtbl tr:hover td:first-child{background:var(--s2)}
+.cell-visit{border-radius:10px;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s,box-shadow .15s,filter .15s;font-size:1.05rem;margin:2px auto}
+.cell-visit:hover{transform:scale(1.2);filter:brightness(1.15);box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.cv-sched{background:linear-gradient(145deg,#2563eb,#60a5fa);box-shadow:0 3px 10px rgba(37,99,235,.5)}
+.cv-done{background:linear-gradient(145deg,#059669,#34d399);box-shadow:0 3px 10px rgba(5,150,105,.5)}
+.cv-post{background:linear-gradient(145deg,#d97706,#fbbf24);box-shadow:0 3px 10px rgba(217,119,6,.4)}
+.cv-cancel{background:rgba(100,116,139,.25);border:1px solid rgba(100,116,139,.4)}
+.cv-pred{background:rgba(129,140,248,.08);border:2px dashed rgba(129,140,248,.6);width:32px;height:32px;color:var(--purple);font-size:1.1rem;font-weight:900}
+.cv-pred:hover{background:rgba(129,140,248,.2)}
+.col-today-hdr{color:#34d399!important;font-weight:900!important;background:rgba(0,212,170,.12)!important;border-bottom:2px solid var(--ops)!important}
+.col-today-cell{background:rgba(0,212,170,.05)!important}
+.fri-col{opacity:.25}
+/* SCHEDULE CARDS */
+.sched-card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;transition:border-color .2s}
+.sched-card:hover{border-color:rgba(0,212,170,.2)}
+.sched-hdr{padding:12px 15px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:8px}
+.sched-site{font-size:.88rem;font-weight:800}
+.sched-freq{font-size:.63rem;padding:2px 8px;border-radius:4px;font-weight:700}
+.sf-weekly{background:var(--blg);color:#60a5fa}.sf-monthly{background:var(--og);color:var(--ops)}.sf-daily{background:var(--pg);color:var(--purple)}
+.sched-body{padding:11px 15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.day-pill{padding:3px 9px;border-radius:12px;font-size:.62rem;font-weight:700;background:var(--s2);border:1px solid var(--border);color:var(--muted)}
+.day-pill.active{background:var(--og);color:var(--ops);border-color:rgba(0,212,170,.2)}
+.eng-badge{background:var(--blg);color:#93c5fd;border-radius:6px;padding:3px 9px;font-size:.65rem;font-weight:600}
+.days-sel{display:flex;gap:5px;flex-wrap:wrap}
+.ds-btn{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Cairo',sans-serif;font-size:.7rem;cursor:pointer;transition:all .15s}
+.ds-btn.on{background:var(--og);color:var(--ops);border-color:rgba(0,212,170,.3)}
+
 /* ═══════════════════════════════
    RESPONSIVE
 ═══════════════════════════════ */
@@ -267,7 +305,6 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
     
     <button onclick="toggleTheme()" id="themeBtn" class="back-btn" title="تبديل المظهر" style="cursor:pointer;min-width:36px;justify-content:center">☀️</button>
     <span id="hdrUserName" style="font-size:.72rem;color:var(--muted)"></span>
-    <a href="schedules.html" class="back-btn">📅 الجداول</a>
     <a href="email-reports.html" class="back-btn">📧 الإيميلات</a>
     <a href="index.html" class="back-btn">← الداش بورد</a>
     <a href="guide.html" class="back-btn">📖 الدليل</a>
@@ -352,45 +389,153 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 
 <!-- ══ SCHEDULE TAB ══ -->
 <div class="view" id="view-schedule">
-  <div class="top-bar" style="margin-bottom:14px">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <select class="finput" id="schedMonth" style="width:auto" onchange="renderSchedule()">
-        <option value="0">يناير</option><option value="1">فبراير</option><option value="2">مارس</option>
-        <option value="3">أبريل</option><option value="4">مايو</option><option value="5">يونيو</option>
-        <option value="6">يوليو</option><option value="7">أغسطس</option><option value="8">سبتمبر</option>
-        <option value="9">أكتوبر</option><option value="10">نوفمبر</option><option value="11">ديسمبر</option>
-      </select>
-      <select class="finput" id="schedYear" style="width:auto" onchange="renderSchedule()"></select>
-      <div style="display:flex;gap:5px">
-        <button class="btn btn-ghost btn-sm" onclick="shiftMonth(-1)">‹ السابق</button>
-        <button class="btn btn-ghost btn-sm" onclick="shiftMonth(1)">التالي ›</button>
+
+  <!-- Sub-tabs -->
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto">
+    <button class="stab act" onclick="switchSubTab('today2',this)">📍 مواقع اليوم</button>
+    <button class="stab" onclick="switchSubTab('fixed',this)">📋 الجداول الثابتة</button>
+    <button class="stab" onclick="switchSubTab('monthly2',this)">📅 الجدول الشهري</button>
+  </div>
+
+  <!-- TODAY SUB-TAB -->
+  <div class="sview show" id="sview-today2">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      <div>
+        <div id="todayDateLabel" style="font-size:1.05rem;font-weight:900;color:var(--ops)"></div>
+        <div id="todaySubLabel" style="font-size:.7rem;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="shiftToday(-1)">‹ أمس</button>
+        <button class="btn btn-ghost btn-sm" onclick="goToday()">اليوم</button>
+        <button class="btn btn-ghost btn-sm" onclick="shiftToday(1)">غداً ›</button>
+        <button class="btn btn-ops btn-sm" onclick="openAddVisitForDay()">+ إضافة زيارة</button>
       </div>
     </div>
-    <div style="display:flex;gap:7px">
-      <button class="btn btn-ghost" onclick="exportScheduleExcel()">📥 Excel</button>
-      <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+    <div id="todayGrid"></div>
+  </div>
+
+  <!-- FIXED SCHEDULES SUB-TAB -->
+  <div class="sview" id="sview-fixed">
+    <div class="top-bar" style="margin-bottom:12px">
+      <div class="search-box">🔍 <input type="text" placeholder="ابحث عن موقع..." id="schedSearch" oninput="renderScheduleCards()"></div>
+      <select class="finput" id="schedKAFilter" style="width:auto;font-size:.75rem" onchange="renderScheduleCards()">
+        <option value="">👥 كل الأكونتات</option>
+      </select>
+      <button class="btn btn-ops" onclick="openSchedModal()">+ إضافة جدول</button>
+    </div>
+    <div id="schedCards"></div>
+  </div>
+
+  <!-- MONTHLY SUB-TAB -->
+  <div class="sview" id="sview-monthly2">
+    <div class="top-bar" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="shiftMonthly(-1)">‹ السابق</button>
+        <select class="finput" id="mMonth" style="width:auto" onchange="renderMonthly()">
+          <option value="0">يناير</option><option value="1">فبراير</option><option value="2">مارس</option>
+          <option value="3">أبريل</option><option value="4">مايو</option><option value="5">يونيو</option>
+          <option value="6">يوليو</option><option value="7">أغسطس</option><option value="8">سبتمبر</option>
+          <option value="9">أكتوبر</option><option value="10">نوفمبر</option><option value="11">ديسمبر</option>
+        </select>
+        <select class="finput" id="mYear" style="width:auto" onchange="renderMonthly()"></select>
+        <button class="btn btn-ghost btn-sm" onclick="shiftMonthly(1)">التالي ›</button>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="btn btn-ops" onclick="generateMonthVisits()">⚡ توليد زيارات الشهر</button>
+        <button class="btn btn-ghost" onclick="exportMonthlyCSV()">📥 Excel</button>
+        <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:.63rem">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:20px;border-radius:5px;background:linear-gradient(135deg,#2563eb,#60a5fa);display:inline-flex;align-items:center;justify-content:center;font-size:.75rem">📅</span>مجدولة</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:20px;border-radius:5px;background:linear-gradient(135deg,#059669,#34d399);display:inline-flex;align-items:center;justify-content:center;font-size:.75rem">✅</span>مكتملة</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:20px;border-radius:5px;background:linear-gradient(135deg,#d97706,#fbbf24);display:inline-flex;align-items:center;justify-content:center;font-size:.75rem">⏰</span>مؤجلة</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:20px;border-radius:5px;border:2px dashed rgba(129,140,248,.6);display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--purple)">+</span>متوقعة</span>
+    </div>
+    <div class="detail-panel">
+      <div class="tbl-wrap" style="padding:8px;overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 300px)">
+        <table class="mtbl" id="monthTable">
+          <thead><tr id="monthHead"></tr></thead>
+          <tbody id="monthBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
-  <div class="detail-panel">
-    <div class="dp-header">
-      <div class="dp-title" id="schedTitle">جدول الزيارات</div>
-      <div style="display:flex;gap:10px;font-size:.65rem">
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#60a5fa;display:inline-block"></span>مجدولة</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--ops);display:inline-block"></span>مكتملة</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--qual);display:inline-block"></span>مؤجلة</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--red);display:inline-block"></span>ملغية</span>
-      </div>
+
+</div>
+
+</main>
+
+<!-- ADD VISIT FOR DAY MODAL -->
+<div class="overlay" id="advDayOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeAddVisitForDay()">✕</button>
+    <div class="mtitle" id="advDayTitle">+ إضافة زيارة</div>
+    <div class="fr"><label class="flbl">الموقع *</label><select class="fsel" id="advSite2"><option value="">— اختر —</option></select></div>
+    <div class="fr2">
+      <div class="fr" style="margin:0"><label class="flbl">التاريخ *</label><input type="date" class="finput" id="advDate2"></div>
+      <div class="fr" style="margin:0"><label class="flbl">رقم الزيارة</label><input type="number" class="finput" id="advNum2" min="1" placeholder="تلقائي"></div>
     </div>
-    <div class="tbl-wrap" style="padding:12px">
-      <table class="tbl" id="schedTable">
-        <thead><tr id="schedHead"></tr></thead>
-        <tbody id="schedBody"></tbody>
-      </table>
+    <div class="fr" style="margin-top:10px"><label class="flbl">👷 المهندسون</label><div class="eng-selector" id="advEngSel2"></div></div>
+    <div class="fr"><label class="flbl">ملاحظات</label><textarea class="ftxt" id="advNotes2" style="min-height:55px"></textarea></div>
+    <button class="sbtn sbtn-ops" onclick="saveAddVisitForDay()">💾 حفظ</button>
+  </div>
+</div>
+
+<!-- VISIT EDIT (today view) -->
+<div class="overlay" id="veOverlay2">
+  <div class="modal">
+    <button class="mcls" onclick="closeVisitEdit2()">✕</button>
+    <div class="mtitle" id="veTitle2">تعديل الزيارة</div>
+    <div class="fr2">
+      <div class="fr" style="margin:0"><label class="flbl">التاريخ</label><input type="date" class="finput" id="veDate2"></div>
+      <div class="fr" style="margin:0"><label class="flbl">رقم الزيارة</label><input type="number" class="finput" id="veNum2" min="1"></div>
+    </div>
+    <div class="fr" style="margin-top:10px"><label class="flbl">الحالة</label>
+      <select class="fsel" id="veStatus2"><option value="scheduled">📋 مجدولة</option><option value="completed">✅ مكتملة</option><option value="postponed">⏰ مؤجلة</option><option value="cancelled">❌ ملغية</option></select>
+    </div>
+    <div class="fr"><label class="flbl">👷 المهندسون</label><div class="eng-selector" id="veEngSel2"></div></div>
+    <div class="fr"><label class="flbl">ملاحظات</label><textarea class="ftxt" id="veNotes2"></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="sbtn sbtn-ops" style="flex:1" onclick="saveVisitEdit2()">💾 حفظ</button>
+      <button class="sbtn sbtn-red" style="flex:0 0 auto;width:auto;padding:10px 16px;margin-top:6px" onclick="deleteVisitEdit2()">🗑️</button>
     </div>
   </div>
 </div>
 
-</main>
+<!-- SCHEDULE MODAL (embedded) -->
+<div class="overlay" id="schedOverlay2">
+  <div class="modal">
+    <button class="mcls" onclick="closeSchedModal()">✕</button>
+    <div class="mtitle" id="schedModalTitle">📋 إضافة جدول ثابت</div>
+    <div class="fr"><label class="flbl">الموقع *</label><select class="fsel" id="smSite"><option value="">— اختر —</option></select></div>
+    <div class="fr"><label class="flbl">المهندس الافتراضي</label><select class="fsel" id="smEngineer"><option value="">— بدون —</option></select></div>
+    <div class="fr"><label class="flbl">نوع التكرار *</label>
+      <select class="fsel" id="smFreq" onchange="toggleFreqFields2()">
+        <option value="weekly">أسبوعي</option><option value="biweekly">كل أسبوعين</option>
+        <option value="monthly_once">شهري — مرة</option><option value="monthly_twice">شهري — مرتين</option><option value="daily">يومي</option>
+      </select>
+    </div>
+    <div class="fr" id="weekDaysRow2">
+      <label class="flbl">أيام الأسبوع</label>
+      <div class="days-sel">
+        <button class="ds-btn" data-d="0" onclick="toggleDay(this)">الأحد</button>
+        <button class="ds-btn" data-d="1" onclick="toggleDay(this)">الاثنين</button>
+        <button class="ds-btn" data-d="2" onclick="toggleDay(this)">الثلاثاء</button>
+        <button class="ds-btn" data-d="3" onclick="toggleDay(this)">الأربعاء</button>
+        <button class="ds-btn" data-d="4" onclick="toggleDay(this)">الخميس</button>
+        <button class="ds-btn" data-d="6" onclick="toggleDay(this)">السبت</button>
+      </div>
+    </div>
+    <div class="fr" id="monthDaysRow2" style="display:none">
+      <label class="flbl">أيام الشهر (مثال: 5 أو 5,20)</label>
+      <input type="text" class="finput" id="smMonthDays" placeholder="5 أو 5,20">
+    </div>
+    <div class="fr"><label class="flbl">ملاحظات</label><textarea class="ftxt" id="smNotes" style="min-height:55px"></textarea></div>
+    <button class="sbtn sbtn-ops" onclick="saveSchedule()">💾 حفظ الجدول</button>
+    <button class="sbtn sbtn-red" id="smDeleteBtn" style="display:none;margin-top:6px" onclick="deleteSchedule()">🗑️ حذف</button>
+  </div>
+</div>
 
 <!-- SITE DETAIL PANEL (full screen overlay) -->
 <div class="overlay" id="siteDetailOverlay">
@@ -1267,172 +1412,540 @@ async function saveFollowup(){
 // ════════════════════════════════
 // SCHEDULE
 // ════════════════════════════════
-function setupScheduleControls(){
+// ══ SCHEDULE TAB VARS ══
+let schedules2=[], schedules2Loaded=false;
+let todayViewDate=new Date().toISOString().split('T')[0];
+const DAY_AR2=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const FREQ_LABELS2={weekly:'أسبوعي',biweekly:'كل أسبوعين',monthly_once:'شهري',monthly_twice:'شهري مرتين',daily:'يومي'};
+const FREQ_CLS2={weekly:'sf-weekly',biweekly:'sf-weekly',monthly_once:'sf-monthly',monthly_twice:'sf-monthly',daily:'sf-daily'};
+
+async function loadSchedules(){
+  if(schedules2Loaded) return;
+  const{data}=await db.from('site_schedules').select('*').eq('is_active',true);
+  schedules2=data||[];
+  schedules2Loaded=true;
+  // populate KA filter
+  const kaEl=document.getElementById('schedKAFilter');
+  if(kaEl&&allUsers.length){
+    kaEl.innerHTML='<option value="">👥 كل الأكونتات</option>'+
+      allUsers.map(u=>`<option value="${u.id}">${u.full_name||u.email}</option>`).join('');
+  }
+  // year selector
   const now=new Date();
-  const sel=document.getElementById('schedMonth');sel.value=now.getMonth();
-  const yearSel=document.getElementById('schedYear');
-  for(let y=now.getFullYear()-1;y<=now.getFullYear()+2;y++){
-    const o=document.createElement('option');o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;
-    yearSel.appendChild(o);
+  const ySel=document.getElementById('mYear');
+  if(ySel&&!ySel.options.length){
+    for(let y=now.getFullYear()-1;y<=now.getFullYear()+2;y++){
+      const o=document.createElement('option');o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;ySel.appendChild(o);
+    }
   }
-  renderSchedule();
+  const mSel=document.getElementById('mMonth');
+  if(mSel) mSel.value=now.getMonth();
 }
 
-function shiftMonth(dir){
-  const mSel=document.getElementById('schedMonth');
-  const ySel=document.getElementById('schedYear');
-  let m=parseInt(mSel.value)+dir;
-  let y=parseInt(ySel.value);
-  if(m>11){m=0;y++;}else if(m<0){m=11;y--;}
-  mSel.value=m;ySel.value=y;
-  renderSchedule();
+function switchSubTab(name,el){
+  document.querySelectorAll('.sview').forEach(v=>v.classList.remove('show'));
+  document.querySelectorAll('.stab').forEach(b=>b.classList.remove('act'));
+  document.getElementById('sview-'+name).classList.add('show');
+  el.classList.add('act');
+  if(name==='today2'){renderToday();}
+  else if(name==='fixed'){loadSchedules().then(renderScheduleCards);}
+  else if(name==='monthly2'){loadSchedules().then(renderMonthly);}
 }
 
-function renderSchedule(){
-  const month=parseInt(document.getElementById('schedMonth').value);
-  const year=parseInt(document.getElementById('schedYear').value);
-  const monthNames=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  document.getElementById('schedTitle').textContent=`جدول الزيارات — ${monthNames[month]} ${year}`;
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
-  const monthVisits=visits.filter(v=>v.scheduled_date&&v.scheduled_date.startsWith(monthStr));
+// ── TODAY ──
+function shiftToday(dir){
+  const d=new Date(todayViewDate+'T12:00:00');d.setDate(d.getDate()+dir);
+  todayViewDate=d.toISOString().split('T')[0];renderToday();
+}
+function goToday(){todayViewDate=new Date().toISOString().split('T')[0];renderToday();}
+function goToDate(ds){
+  todayViewDate=ds;
+  const btn=document.querySelector('.stab[onclick*="today2"]');
+  if(btn) switchSubTab('today2',btn);
+}
+
+function renderToday(){
+  const d=new Date(todayViewDate+'T12:00:00');
+  const isActualToday=todayViewDate===new Date().toISOString().split('T')[0];
+  const mn=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  document.getElementById('todayDateLabel').textContent=`${isActualToday?'📍 ':'📅 '}${DAY_AR2[d.getDay()]} ${d.getDate()} ${mn[d.getMonth()]} ${d.getFullYear()}`;
+  document.getElementById('todaySubLabel').textContent=isActualToday?'زيارات اليوم':'زيارات هذا اليوم';
+  const dayVisits=allVisits.filter(v=>v.scheduled_date===todayViewDate&&v.status!=='cancelled');
+  const realSiteIds=new Set(dayVisits.map(v=>v.site_id));
+  const predItems=[];
+  schedules2.forEach(sc=>{
+    if(realSiteIds.has(sc.site_id)) return;
+    const prev=new Date(new Date(todayViewDate+'T12:00:00')-86400000).toISOString().split('T')[0];
+    if(generateDates2(sc,prev,3).includes(todayViewDate)) predItems.push(sc);
+  });
+  const el=document.getElementById('todayGrid');
+  const stC={scheduled:'var(--blg)',completed:'var(--og)',postponed:'var(--qg)'};
+  const stB={scheduled:'rgba(59,130,246,.25)',completed:'rgba(0,212,170,.25)',postponed:'rgba(245,158,11,.25)'};
+  const stL={scheduled:'📋 مجدولة',completed:'✅ مكتملة',postponed:'⏰ مؤجلة',cancelled:'❌ ملغية'};
+  const kaColors=['#3b82f6','#f59e0b','#a855f7','#ec4899','#14b8a6'];
+  const realHTML=dayVisits.map(v=>{
+    const site=allSites.find(s=>s.id===v.site_id);
+    const veList=visitEngineers.filter(x=>x.visit_id===v.id);
+    const engList=veList.map(ve=>engineers.find(e=>e.id===ve.engineer_id)).filter(Boolean);
+    const kaIdx=allUsers.findIndex(u=>u.id===site?.assigned_to);
+    const kaColor=kaIdx>=0?kaColors[kaIdx%kaColors.length]:'var(--ops)';
+    const kaName=kaIdx>=0?(allUsers[kaIdx].full_name||allUsers[kaIdx].email):'';
+    return `<div style="background:${stC[v.status]||'var(--s2)'};border:1px solid ${stB[v.status]||'var(--border)'};border-right:4px solid ${kaColor};border-radius:12px;padding:13px 16px;margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:.88rem;font-weight:900;margin-bottom:3px">🏢 ${site?.name||'—'}</div>
+          <div style="font-size:.64rem;color:var(--muted)">${site?.region||''}</div>
+          ${kaName?`<div style="font-size:.62rem;font-weight:700;color:${kaColor};margin-top:3px">👤 ${kaName}</div>`:''}
+          <div style="margin-top:5px;font-size:.7rem;color:var(--dim)">زيارة رقم ${v.visit_number||'—'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          <span style="font-size:.62rem;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(0,0,0,.1)">${stL[v.status]||''}</span>
+          <button class="btn btn-ghost btn-sm" onclick="openVisitEdit2('${v.id}')">✏️ تعديل</button>
+        </div>
+      </div>
+      <div style="margin-top:9px;border-top:1px solid rgba(0,0,0,.06);padding-top:9px">
+        <div style="font-size:.63rem;color:var(--muted);margin-bottom:6px;font-weight:700">👷 المهندسون</div>
+        ${engList.length?`<div style="display:flex;gap:6px;flex-wrap:wrap">${engList.map(e=>`<span style="background:var(--blg);color:#1d4ed8;border-radius:6px;padding:3px 10px;font-size:.7rem;font-weight:700">👷 ${e.name}</span>`).join('')}</div>`
+        :`<div style="font-size:.67rem;color:var(--muted)">لم يُسنَد مهندس — <button onclick="openVisitEdit2('${v.id}')" style="background:none;border:none;color:var(--ops);font-size:.67rem;cursor:pointer;font-family:Cairo,sans-serif;font-weight:700">+ أضف</button></div>`}
+      </div>
+      ${v.general_notes?`<div style="margin-top:7px;font-size:.67rem;color:var(--dim);border-top:1px solid rgba(0,0,0,.05);padding-top:7px">📝 ${v.general_notes}</div>`:''}
+    </div>`;
+  }).join('');
+  const predHTML=predItems.map(sc=>{
+    const site=allSites.find(s=>s.id===sc.site_id);
+    const defEng=engineers.find(e=>e.id===sc.engineer_id);
+    return `<div style="background:rgba(129,140,248,.06);border:1px dashed rgba(129,140,248,.3);border-radius:12px;padding:13px 16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:.88rem;font-weight:900;margin-bottom:3px">🏢 ${site?.name||'—'}</div>
+          ${defEng?`<span style="background:var(--blg);color:#1d4ed8;border-radius:5px;padding:2px 8px;font-size:.66rem;font-weight:700">👷 ${defEng.name}</span>`:''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-size:.6rem;color:var(--purple);font-weight:700;background:rgba(129,140,248,.1);padding:3px 8px;border-radius:4px">متوقعة</span>
+          <button class="btn btn-ghost btn-sm" onclick="createVisitFromPred2('${sc.site_id}','${todayViewDate}','${sc.id}')">+ جدّل</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=realHTML+(predHTML?`<div style="font-size:.68rem;color:var(--muted);margin:12px 0 8px;font-weight:700">🔮 متوقعة</div>${predHTML}`:'')
+    ||(dayVisits.length+predItems.length===0?`<div class="empty"><div class="empty-icon">🌴</div>لا توجد زيارات لهذا اليوم</div>`:'');
+}
+
+// ── ADD VISIT FOR DAY ──
+function openAddVisitForDay(){
+  const el=document.getElementById('advSite2');
+  if(el) el.innerHTML='<option value="">— اختر موقع —</option>'+allSites.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('advDate2').value=todayViewDate;
+  document.getElementById('advNum2').value='';
+  document.getElementById('advNotes2').value='';
+  buildEngSelector2('advEngSel2',[]);
+  document.getElementById('advDayOverlay').classList.add('open');
+}
+function closeAddVisitForDay(){document.getElementById('advDayOverlay').classList.remove('open');}
+document.getElementById('advDayOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('advDayOverlay'))closeAddVisitForDay();});
+function buildEngSelector2(cid,sel=[]){
+  const el=document.getElementById(cid);
+  el.innerHTML=engineers.map(e=>`<button type="button" class="eng-toggle ${sel.includes(e.id)?'sel':''}" data-id="${e.id}" onclick="this.classList.toggle('sel')">${e.name}</button>`).join('');
+}
+async function saveAddVisitForDay(){
+  if(!await requirePin()) return;
+  const siteId=document.getElementById('advSite2').value;
+  const date=document.getElementById('advDate2').value;
+  if(!siteId||!date){showToast('⚠️ اختر الموقع والتاريخ','t-err');return;}
+  const num=parseInt(document.getElementById('advNum2').value)||allVisits.filter(v=>v.site_id===siteId).length+1;
+  const{data,error}=await db.from('visits').insert([{site_id:siteId,scheduled_date:date,status:'scheduled',visit_number:num,general_notes:document.getElementById('advNotes2').value.trim()}]).select().single();
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  allVisits.unshift(data);visits=allVisits;
+  const selEngs=[...document.querySelectorAll('#advEngSel2 .eng-toggle.sel')].map(b=>b.dataset.id);
+  if(selEngs.length){
+    const ins=selEngs.map(eid=>({visit_id:data.id,engineer_id:eid}));
+    await db.from('visit_engineers').insert(ins);
+    ins.forEach((x,i)=>visitEngineers.push({...x,id:'ad'+Date.now()+i}));
+  }
+  closeAddVisitForDay();renderToday();renderVisits();
+  showToast('✅ تم إضافة الزيارة','t-ok');
+}
+
+// ── VISIT EDIT (from today view) ──
+let editVisitId2=null;
+function openVisitEdit2(visitId){
+  editVisitId2=visitId;
+  const v=allVisits.find(x=>x.id===visitId);
+  if(!v) return;
+  const site=allSites.find(s=>s.id===v.site_id);
+  document.getElementById('veTitle2').textContent=`✏️ ${site?.name||''} — ${v.scheduled_date||''}`;
+  document.getElementById('veDate2').value=v.scheduled_date||'';
+  document.getElementById('veNum2').value=v.visit_number||'';
+  document.getElementById('veStatus2').value=v.status||'scheduled';
+  document.getElementById('veNotes2').value=v.general_notes||'';
+  const cur=visitEngineers.filter(x=>x.visit_id===visitId).map(x=>x.engineer_id);
+  buildEngSelector2('veEngSel2',cur);
+  document.getElementById('veOverlay2').classList.add('open');
+}
+function closeVisitEdit2(){document.getElementById('veOverlay2').classList.remove('open');editVisitId2=null;}
+document.getElementById('veOverlay2').addEventListener('click',e=>{if(e.target===document.getElementById('veOverlay2'))closeVisitEdit2();});
+async function saveVisitEdit2(){
+  const payload={scheduled_date:document.getElementById('veDate2').value,visit_number:parseInt(document.getElementById('veNum2').value)||null,status:document.getElementById('veStatus2').value,general_notes:document.getElementById('veNotes2').value.trim()};
+  const{error}=await db.from('visits').update(payload).eq('id',editVisitId2);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  const selEngs=[...document.querySelectorAll('#veEngSel2 .eng-toggle.sel')].map(b=>b.dataset.id);
+  await db.from('visit_engineers').delete().eq('visit_id',editVisitId2);
+  if(selEngs.length) await db.from('visit_engineers').insert(selEngs.map(eid=>({visit_id:editVisitId2,engineer_id:eid})));
+  const idx=allVisits.findIndex(x=>x.id===editVisitId2);
+  if(idx>-1) allVisits[idx]={...allVisits[idx],...payload};
+  visits=allVisits;
+  visitEngineers=visitEngineers.filter(x=>x.visit_id!==editVisitId2);
+  selEngs.forEach((eid,i)=>visitEngineers.push({visit_id:editVisitId2,engineer_id:eid,id:'ve'+Date.now()+i}));
+  closeVisitEdit2();renderToday();renderVisits();renderMonthly();
+  showToast('✅ تم التعديل','t-ok');
+}
+async function deleteVisitEdit2(){
+  if(!confirm('حذف هذه الزيارة؟')) return;
+  await db.from('visit_engineers').delete().eq('visit_id',editVisitId2);
+  await db.from('visits').delete().eq('id',editVisitId2);
+  allVisits=allVisits.filter(x=>x.id!==editVisitId2);visits=allVisits;
+  visitEngineers=visitEngineers.filter(x=>x.visit_id!==editVisitId2);
+  closeVisitEdit2();renderToday();renderVisits();renderMonthly();
+  showToast('🗑️ تم الحذف','t-ok');
+}
+
+// ── FIXED SCHEDULES ──
+function renderScheduleCards(){
+  const q=(document.getElementById('schedSearch')?.value||'').toLowerCase();
+  const kaF=document.getElementById('schedKAFilter')?.value||'';
+  let list=schedules2;
+  if(currentProfile?.role!=='admin'&&currentUser) list=list.filter(sc=>allSites.find(s=>s.id===sc.site_id&&(s.assigned_to===currentUser.id||!s.assigned_to)));
+  if(kaF) list=list.filter(sc=>allSites.find(s=>s.id===sc.site_id)?.assigned_to===kaF);
+  if(q) list=list.filter(sc=>(allSites.find(s=>s.id===sc.site_id)?.name||'').toLowerCase().includes(q));
+  const el=document.getElementById('schedCards');
+  const kaColors=['#3b82f6','#f59e0b','#a855f7','#ec4899','#14b8a6'];
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-icon">📋</div>${q?'لا نتائج':'لا توجد جداول — أضف جدول لموقع'}</div>`;return;}
   const today=new Date().toISOString().split('T')[0];
-  const dayFull=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-
-  const thead=document.getElementById('schedHead');
-  thead.innerHTML=`<th style="min-width:130px;position:sticky;right:0;background:var(--s2);z-index:2">الموقع</th>`+
-    Array.from({length:daysInMonth},(_,i)=>{
-      const d=new Date(year,month,i+1);
-      const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;
-      const isToday=ds===today;
-      const isWknd=d.getDay()===5; // الجمعة فقط
-      return `<th style="min-width:52px;${isToday?'color:var(--ops);font-weight:900;':''}${isWknd?'opacity:.4;':''}">${i+1}<div style="font-size:.52rem;opacity:.8;white-space:nowrap">${dayFull[d.getDay()]}</div></th>`;
-    }).join('');
-
-  const tbody=document.getElementById('schedBody');
-  if(!sites.length){
-    tbody.innerHTML=`<tr><td colspan="${daysInMonth+1}" style="text-align:center;padding:24px;color:var(--muted)">لا توجد مواقع</td></tr>`;
-    return;
-  }
-
-  const colors={scheduled:'#60a5fa',completed:'var(--ops)',postponed:'var(--qual)',cancelled:'var(--red)'};
-  const labels={scheduled:'م',completed:'✓',postponed:'⏰',cancelled:'✕'};
-
-  tbody.innerHTML=sites.map(site=>{
-    const siteVisits=visits.filter(v=>v.site_id===site.id);
-    const done=siteVisits.filter(v=>v.status==='completed').length;
-    const pct=site.agreed_visits?Math.round(done/site.agreed_visits*100):0;
-
-    const cells=Array.from({length:daysInMonth},(_,d)=>{
-      const dayStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d+1).padStart(2,'0')}`;
-      const isToday=dayStr===today;
-      const v=monthVisits.find(v=>v.site_id===site.id&&v.scheduled_date===dayStr);
-      const bg=isToday?'background:rgba(0,212,170,.05);':'';
-      if(!v) return `<td style="${bg}"></td>`;
-      const col=colors[v.status]||'#60a5fa';
-      const lbl=labels[v.status]||'م';
-      return `<td style="${bg}background:rgba(0,0,0,.15)">
-        <div style="background:${col};border-radius:3px;padding:2px 3px;font-size:.58rem;font-weight:800;color:#07090f;text-align:center" title="${v.status}">${lbl}</div>
-      </td>`;
-    }).join('');
-
-    return `<tr>
-      <td style="font-weight:700;font-size:.72rem;position:sticky;right:0;background:var(--s2);z-index:1;padding:6px 10px" title="${site.name}">
-        <div style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${site.name}</div>
-        <div style="font-size:.57rem;color:var(--muted);margin-top:1px">${done}/${site.agreed_visits||0} · ${pct}%</div>
-      </td>
-      ${cells}
-    </tr>`;
+  el.innerHTML=list.map(sc=>{
+    const site=allSites.find(s=>s.id===sc.site_id);
+    const eng=engineers.find(e=>e.id===sc.engineer_id);
+    const days=(sc.week_days||[]).map(Number).sort();
+    const mdays=(sc.month_days||[]).sort((a,b)=>a-b);
+    const kaIdx=allUsers.findIndex(u=>u.id===site?.assigned_to);
+    const kaColor=kaIdx>=0?kaColors[kaIdx%kaColors.length]:'#94a3b8';
+    const kaName=kaIdx>=0?(allUsers[kaIdx].full_name||allUsers[kaIdx].email):'';
+    const nextDate=generateDates2(sc,today,1)[0]||null;
+    return `<div class="sched-card" style="border-right:3px solid ${kaColor}">
+      <div class="sched-hdr">
+        <div>
+          <div class="sched-site">🏢 ${site?.name||'—'}</div>
+          <div style="font-size:.62rem;color:var(--muted);margin-top:2px">${site?.region||''} ${kaName?`· <span style="color:${kaColor};font-weight:700">👤 ${kaName}</span>`:''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="sched-freq ${FREQ_CLS2[sc.freq_type]||'sf-weekly'}">${FREQ_LABELS2[sc.freq_type]||sc.freq_type}</span>
+          <button class="btn btn-ops btn-sm" onclick="generateSiteMonth('${sc.id}','${sc.site_id}')">⚡ توليد</button>
+          <button class="btn btn-ghost btn-sm" onclick="openSchedModal('${sc.id}')">✏️</button>
+        </div>
+      </div>
+      <div class="sched-body">
+        ${sc.freq_type==='daily'?'<span class="day-pill active">كل يوم</span>':
+          sc.freq_type==='weekly'||sc.freq_type==='biweekly'?
+          `<div style="display:flex;gap:4px;flex-wrap:wrap">${[0,1,2,3,4,6].map(d=>`<span class="day-pill ${days.includes(d)?'active':''}">${DAY_AR2[d]}</span>`).join('')}</div>`:
+          `<div style="display:flex;gap:4px">${mdays.map(d=>`<span class="day-pill active">يوم ${d}</span>`).join('')}</div>`}
+        ${eng?`<span class="eng-badge">👷 ${eng.name}</span>`:''}
+        ${nextDate?`<span style="font-size:.62rem;color:var(--qual);background:var(--qg);padding:2px 8px;border-radius:4px;font-weight:700">📅 ${nextDate}</span>`:''}
+      </div>
+    </div>`;
   }).join('');
 }
 
+// ── DATE GENERATION ──
+function generateDates2(sc, fromDateStr, count=60){
+  const results=[];
+  const freq=sc.freq_type;
+  const weekDays=(sc.week_days||[]).map(Number);
+  const monthDays=(sc.month_days||[]).map(Number);
+  const from=new Date(fromDateStr+'T12:00:00');
+  if(freq==='daily'){let d=new Date(from);d.setDate(d.getDate()+1);while(results.length<count){results.push(d.toISOString().split('T')[0]);d.setDate(d.getDate()+1);}}
+  else if(freq==='weekly'){if(!weekDays.length)return[];let cur=new Date(from);cur.setDate(cur.getDate()+1);const end=new Date(from);end.setFullYear(end.getFullYear()+2);while(cur<=end&&results.length<count){if(weekDays.includes(cur.getDay()))results.push(cur.toISOString().split('T')[0]);cur.setDate(cur.getDate()+1);}}
+  else if(freq==='biweekly'){if(!weekDays.length)return[];const all=[];let cur=new Date(from);cur.setDate(cur.getDate()+1);const end=new Date(from);end.setFullYear(end.getFullYear()+2);while(cur<=end&&all.length<count*2){if(weekDays.includes(cur.getDay()))all.push(cur.toISOString().split('T')[0]);cur.setDate(cur.getDate()+1);}return all.filter((_,i)=>i%2===0).slice(0,count);}
+  else if(freq==='monthly_once'||freq==='monthly_twice'){if(!monthDays.length)return[];const end=new Date(from);end.setFullYear(end.getFullYear()+2);let y=from.getFullYear(),m=from.getMonth();while(results.length<count){const last=new Date(y,m+1,0).getDate();monthDays.slice().sort((a,b)=>a-b).forEach(day=>{const d=new Date(y,m,Math.min(day,last));if(d>from&&d<=end&&results.length<count)results.push(d.toISOString().split('T')[0]);});m++;if(m>11){m=0;y++;}if(new Date(y,m,1)>end)break;}}
+  return results;
+}
 
-async function exportScheduleExcel(){
-  showToast('📥 جاري التصدير...','t-info');
-  const month=parseInt(document.getElementById('schedMonth').value);
-  const year=parseInt(document.getElementById('schedYear').value);
-  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
-  const monthVisits=visits.filter(v=>v.scheduled_date?.startsWith(monthStr));
+// ── MONTHLY TABLE ──
+function shiftMonthly(dir){
+  const mSel=document.getElementById('mMonth');const ySel=document.getElementById('mYear');
+  let m=parseInt(mSel.value)+dir,y=parseInt(ySel.value);
+  if(m>11){m=0;y++;}else if(m<0){m=11;y--;}
+  mSel.value=m;ySel.value=y;renderMonthly();
+}
+
+function renderMonthly(){
+  const month=parseInt(document.getElementById('mMonth')?.value);
+  const year=parseInt(document.getElementById('mYear')?.value);
+  if(isNaN(month)||isNaN(year)) return;
   const daysInMonth=new Date(year,month+1,0).getDate();
-  const headers=['المهندس',...Array.from({length:daysInMonth},(_,i)=>String(i+1))];
-  const rows=engineers.map(eng=>{
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const today=new Date().toISOString().split('T')[0];
+  const kaColors=['#3b82f6','#f59e0b','#a855f7','#ec4899','#14b8a6'];
+  const thead=document.getElementById('monthHead');
+  if(!thead) return;
+  thead.innerHTML=`<th>الموقع</th>`+Array.from({length:daysInMonth},(_,i)=>{
+    const d=new Date(year,month,i+1);
+    const ds=`${monthStr}-${String(i+1).padStart(2,'0')}`;
+    const isToday=ds===today;const isFri=d.getDay()===5;
+    return `<th class="${isToday?'col-today-hdr':''} ${isFri?'fri-col':''}" style="min-width:42px;cursor:pointer" onclick="goToDate('${ds}')">${i+1}<div style="font-size:.46rem;margin-top:2px;opacity:.8">${DAY_AR2[d.getDay()]}</div></th>`;
+  }).join('');
+  const tbody=document.getElementById('monthBody');
+  if(!schedules2.length){tbody.innerHTML=`<tr><td colspan="${daysInMonth+1}" style="text-align:center;padding:24px;color:var(--muted)">أضف جدول ثابت أولاً</td></tr>`;return;}
+  const prevEnd=new Date(year,month,0).toISOString().split('T')[0];
+  const monthVisits=allVisits.filter(v=>v.scheduled_date?.startsWith(monthStr));
+  tbody.innerHTML=schedules2.map(sc=>{
+    const site=allSites.find(s=>s.id===sc.site_id);
+    const defEng=engineers.find(e=>e.id===sc.engineer_id);
+    if(!site) return '';
+    const predicted=generateDates2(sc,prevEnd,60).filter(d=>d.startsWith(monthStr));
+    const kaIdx=allUsers.findIndex(u=>u.id===site.assigned_to);
+    const kaColor=kaIdx>=0?kaColors[kaIdx%kaColors.length]:'#00d4aa';
+    const kaName=kaIdx>=0?(allUsers[kaIdx].full_name||allUsers[kaIdx].email).split(' ')[0]:'';
     const cells=Array.from({length:daysInMonth},(_,d)=>{
-      const dayStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d+1).padStart(2,'0')}`;
-      const v=monthVisits.find(v=>{
-        const veIds=visitEngineers.filter(ve=>ve.visit_id===v.id).map(ve=>ve.engineer_id);
-        return v.scheduled_date===dayStr&&veIds.includes(eng.id);
-      });
-      if(!v)return '';
-      return sites.find(s=>s.id===v.site_id)?.name||'زيارة';
+      const dayNum=d+1;const dayStr=`${monthStr}-${String(dayNum).padStart(2,'0')}`;
+      const isToday=dayStr===today;const isFri=new Date(year,month,dayNum).getDay()===5;
+      const rv=monthVisits.find(v=>v.site_id===site.id&&v.scheduled_date===dayStr);
+      if(rv){
+        const cls={scheduled:'cv-sched',completed:'cv-done',postponed:'cv-post',cancelled:'cv-cancel'}[rv.status]||'cv-sched';
+        const icon={scheduled:'📅',completed:'✅',postponed:'⏰',cancelled:'✕'}[rv.status]||'📅';
+        const veList=visitEngineers.filter(x=>x.visit_id===rv.id);
+        const engTip=veList.map(ve=>engineers.find(e=>e.id===ve.engineer_id)?.name||'').filter(Boolean).join(' / ')||defEng?.name||'';
+        return `<td class="${isToday?'col-today-cell':''} ${isFri?'fri-col':''}"><div class="cell-visit ${cls}" onclick="openVisitEdit2('${rv.id}')" title="${site.name}&#10;${engTip}">${icon}</div></td>`;
+      }
+      if(predicted.includes(dayStr)){
+        return `<td class="${isToday?'col-today-cell':''} ${isFri?'fri-col':''}"><div class="cell-visit cv-pred" onclick="createVisitFromPred2('${site.id}','${dayStr}','${sc.id}')" title="متوقعة — اضغط لجدولة">+</div></td>`;
+      }
+      return `<td class="${isToday?'col-today-cell':''} ${isFri?'fri-col':''}"></td>`;
+    }).join('');
+    const siteVs=monthVisits.filter(v=>v.site_id===site.id);
+    const done=siteVs.filter(v=>v.status==='completed').length;
+    const total=siteVs.filter(v=>v.status!=='cancelled').length;
+    const pct=total?Math.round(done/total*100):0;
+    const siteName=site.name.length>18?site.name.slice(0,17)+'…':site.name;
+    return `<tr><td style="border-right:3px solid ${kaColor};cursor:pointer" onclick="openSiteDetailModal('${site.id}')" title="اضغط للتفاصيل">
+      <div style="font-size:.74rem;font-weight:800;text-decoration:underline dotted;text-underline-offset:2px">${siteName}</div>
+      <div style="display:flex;align-items:center;gap:4px;margin-top:3px"><div style="flex:1;height:3px;background:var(--s3);border-radius:2px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${pct>=100?'var(--ops)':'#3b82f6'};border-radius:2px"></div></div><span style="font-size:.54rem;color:var(--muted)">${done}/${total}</span></div>
+      ${kaName?`<div style="font-size:.6rem;font-weight:700;margin-top:2px;color:${kaColor}">👤 ${kaName}</div>`:''}
+      ${defEng?`<div style="font-size:.55rem;color:var(--dim);margin-top:1px">👷 ${defEng.name.split(' ')[0]}</div>`:''}
+    </td>${cells}</tr>`;
+  }).filter(Boolean).join('');
+}
+
+// ── GENERATE ──
+async function requirePin(){const p=prompt('🔐 الرقم السري:');if(p===null)return false;if(p!=='0000'){showToast('❌ رقم سري خاطئ','t-err');return false;}return true;}
+
+async function generateSiteMonth(schedId, siteId){
+  if(!await requirePin()) return;
+  const month=parseInt(document.getElementById('mMonth')?.value)||new Date().getMonth();
+  const year=parseInt(document.getElementById('mYear')?.value)||new Date().getFullYear();
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const prevEnd=new Date(year,month,0).toISOString().split('T')[0];
+  const sc=schedules2.find(x=>x.id===schedId);if(!sc) return;
+  const existing=allVisits.filter(v=>v.site_id===siteId&&v.scheduled_date?.startsWith(monthStr));
+  const existingDates=new Set(existing.map(v=>v.scheduled_date));
+  const toInsert=generateDates2(sc,prevEnd,60).filter(d=>d.startsWith(monthStr)&&!existingDates.has(d)).map((date,i)=>({site_id:siteId,scheduled_date:date,status:'scheduled',visit_number:existing.length+i+1}));
+  if(!toInsert.length){showToast('✅ الزيارات موجودة بالفعل','t-info');return;}
+  const site=allSites.find(s=>s.id===siteId);
+  if(!confirm(`توليد ${toInsert.length} زيارة لـ "${site?.name}"؟`)) return;
+  const{data,error}=await db.from('visits').insert(toInsert).select();
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  if(sc.engineer_id&&data?.length){
+    const ins=data.map(v=>({visit_id:v.id,engineer_id:sc.engineer_id}));
+    await db.from('visit_engineers').insert(ins);
+    ins.forEach((x,i)=>visitEngineers.push({...x,id:'gs'+Date.now()+i}));
+  }
+  allVisits=[...(data||[]),...allVisits];visits=allVisits;
+  renderMonthly();renderToday();renderVisits();
+  showToast(`⚡ تم توليد ${toInsert.length} زيارة`,'t-ok');
+}
+
+async function generateMonthVisits(){
+  if(!await requirePin()) return;
+  const month=parseInt(document.getElementById('mMonth')?.value)||new Date().getMonth();
+  const year=parseInt(document.getElementById('mYear')?.value)||new Date().getFullYear();
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const prevEnd=new Date(year,month,0).toISOString().split('T')[0];
+  const existing=new Set(allVisits.filter(v=>v.scheduled_date?.startsWith(monthStr)).map(v=>v.site_id+'_'+v.scheduled_date));
+  const toInsert=[];
+  schedules2.forEach(sc=>{generateDates2(sc,prevEnd,60).filter(d=>d.startsWith(monthStr)).forEach((date,i)=>{if(!existing.has(sc.site_id+'_'+date))toInsert.push({site_id:sc.site_id,scheduled_date:date,status:'scheduled',visit_number:i+1});});});
+  if(!toInsert.length){showToast('✅ كل الزيارات موجودة','t-info');return;}
+  if(!confirm(`توليد ${toInsert.length} زيارة للشهر؟`)) return;
+  const{data,error}=await db.from('visits').insert(toInsert).select();
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  const engIns=[];data.forEach(v=>{const sc=schedules2.find(x=>x.site_id===v.site_id);if(sc?.engineer_id)engIns.push({visit_id:v.id,engineer_id:sc.engineer_id});});
+  if(engIns.length) await db.from('visit_engineers').insert(engIns);
+  allVisits=[...(data||[]),...allVisits];visits=allVisits;
+  engIns.forEach((x,i)=>visitEngineers.push({...x,id:'gm'+Date.now()+i}));
+  renderMonthly();renderToday();renderVisits();
+  showToast(`⚡ تم توليد ${toInsert.length} زيارة`,'t-ok');
+}
+
+async function createVisitFromPred2(siteId, date, schedId){
+  if(!await requirePin()) return;
+  const sc=schedules2.find(x=>x.id===schedId);
+  const num=allVisits.filter(v=>v.site_id===siteId&&v.scheduled_date?.startsWith(date.slice(0,7))).length+1;
+  const{data,error}=await db.from('visits').insert([{site_id:siteId,scheduled_date:date,status:'scheduled',visit_number:num}]).select().single();
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  allVisits.unshift(data);visits=allVisits;
+  if(sc?.engineer_id){await db.from('visit_engineers').insert([{visit_id:data.id,engineer_id:sc.engineer_id}]);visitEngineers.push({visit_id:data.id,engineer_id:sc.engineer_id,id:'cv'+Date.now()});}
+  renderMonthly();renderToday();renderVisits();
+  showToast('📋 تم الجدولة','t-ok');
+}
+
+function exportMonthlyCSV(){
+  const month=parseInt(document.getElementById('mMonth')?.value)||new Date().getMonth();
+  const year=parseInt(document.getElementById('mYear')?.value)||new Date().getFullYear();
+  const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
+  const prevEnd=new Date(year,month,0).toISOString().split('T')[0];
+  const monthVisits=allVisits.filter(v=>v.scheduled_date?.startsWith(monthStr));
+  const stMap={scheduled:'مجدولة',completed:'مكتملة',postponed:'مؤجلة',cancelled:'ملغية'};
+  const rows=[['الموقع','التاريخ','اليوم','المهندسون','الحالة','رقم الزيارة','ملاحظات']];
+  schedules2.forEach(sc=>{
+    const site=allSites.find(s=>s.id===sc.site_id);
+    const predicted=generateDates2(sc,prevEnd,60).filter(d=>d.startsWith(monthStr));
+    const allDates=new Set([...monthVisits.filter(v=>v.site_id===sc.site_id).map(v=>v.scheduled_date),...predicted]);
+    [...allDates].sort().forEach(date=>{
+      const v=monthVisits.find(x=>x.site_id===sc.site_id&&x.scheduled_date===date);
+      const veList=v?visitEngineers.filter(x=>x.visit_id===v.id):[];
+      const engNames=veList.map(ve=>engineers.find(e=>e.id===ve.engineer_id)?.name||'').filter(Boolean).join(' / ')||engineers.find(e=>e.id===sc.engineer_id)?.name||'';
+      rows.push([site?.name||'',date,DAY_AR2[new Date(date+'T12:00:00').getDay()],engNames,v?stMap[v.status]:'متوقعة',v?.visit_number||'',v?.general_notes||'']);
     });
-    return [eng.name,...cells];
   });
-  const csv='\uFEFF'+[headers,...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('
+');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`جدول_${monthStr}.csv`;a.click();
   showToast('✅ تم التصدير','t-ok');
 }
 
-// ════════════════════════════════
-// DELETE SITE
-// ════════════════════════════════
-async function quickDeleteSite(siteId, siteName){
-  if(!confirm(`حذف موقع "${siteName}"؟
-سيتم حذف كل الزيارات المرتبطة به.`))return;
-  const{error}=await db.from('sites').update({is_active:false}).eq('id',siteId);
-  if(error){showToast('❌ '+error.message,'t-err');return;}
-  allSites=allSites.filter(x=>x.id!==siteId);
-  sites=allSites;
-  allVisits=allVisits.filter(v=>v.site_id!==siteId);
-  visits=allVisits;
-  renderSites();renderVisits();renderSchedule();
-  showToast('🗑️ تم حذف الموقع','t-ok');
+// ── SITE DETAIL (from monthly) ──
+function openSiteDetailModal(siteId){
+  const site=allSites.find(s=>s.id===siteId);if(!site) return;
+  const kaColors=['#3b82f6','#f59e0b','#a855f7','#ec4899','#14b8a6'];
+  const kaIdx=allUsers.findIndex(u=>u.id===site.assigned_to);
+  const kaColor=kaIdx>=0?kaColors[kaIdx%kaColors.length]:'#94a3b8';
+  const kaName=kaIdx>=0?(allUsers[kaIdx].full_name||allUsers[kaIdx].email):'غير محدد';
+  const siteVisits=allVisits.filter(v=>v.site_id===siteId).sort((a,b)=>b.scheduled_date?.localeCompare(a.scheduled_date));
+  const done=siteVisits.filter(v=>v.status==='completed').length;
+  const sched=siteVisits.filter(v=>v.status==='scheduled').length;
+  const pct=site.agreed_visits?Math.round(done/site.agreed_visits*100):0;
+  const stC={scheduled:'#2563eb',completed:'#059669',postponed:'#d97706',cancelled:'#94a3b8'};
+  const stL={scheduled:'مجدولة',completed:'مكتملة',postponed:'مؤجلة',cancelled:'ملغية'};
+  const stI={scheduled:'📅',completed:'✅',postponed:'⏰',cancelled:'✕'};
+  document.getElementById('siteDetailContent').innerHTML=`
+    <div style="padding-left:28px">
+      <div style="border-right:4px solid ${kaColor};padding-right:12px;margin-bottom:16px">
+        <div style="font-size:1.05rem;font-weight:900">${site.name}</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:3px">📍 ${site.region||'—'}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:var(--s2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+          <div style="font-size:.6rem;color:var(--muted);margin-bottom:4px;font-weight:700">👤 KEY ACCOUNT</div>
+          <div style="font-size:.86rem;font-weight:900;color:${kaColor}">${kaName}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+          <div style="font-size:.6rem;color:var(--muted);margin-bottom:4px;font-weight:700">📊 الإنجاز</div>
+          <div style="font-size:.86rem;font-weight:900">${done}/${site.agreed_visits||'?'}</div>
+          <div style="height:4px;background:var(--s3);border-radius:2px;margin-top:5px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${pct>=100?'var(--ops)':'#3b82f6'};border-radius:2px"></div></div>
+        </div>
+        <div style="background:var(--s2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+          <div style="font-size:.6rem;color:var(--muted);margin-bottom:4px;font-weight:700">📞 المسؤول</div>
+          <div style="font-size:.8rem;font-weight:700">${site.client_name||'—'}</div>
+          <div style="font-size:.67rem;color:var(--muted)">${site.client_phone||''}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+          <div style="font-size:.6rem;color:var(--muted);margin-bottom:4px;font-weight:700">📋 مجدولة</div>
+          <div style="font-size:.86rem;font-weight:900;color:#2563eb">${sched} زيارة</div>
+        </div>
+      </div>
+      <div style="font-size:.72rem;font-weight:800;margin-bottom:8px">آخر الزيارات</div>
+      <div style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:5px">
+        ${siteVisits.slice(0,12).map(v=>{
+          const veList=visitEngineers.filter(x=>x.visit_id===v.id);
+          const engNames=veList.map(ve=>engineers.find(e=>e.id===ve.engineer_id)?.name||'').filter(Boolean).join(' / ');
+          return `<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px">
+            <span>${stI[v.status]||'📅'}</span>
+            <div style="flex:1">
+              <div style="font-size:.75rem;font-weight:700">${v.scheduled_date||'—'} <span style="color:var(--muted);font-weight:400">· زيارة ${v.visit_number||'?'}</span></div>
+              ${engNames?`<div style="font-size:.63rem;color:var(--muted);margin-top:2px">👷 ${engNames}</div>`:''}
+            </div>
+            <span style="font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:4px;background:${stC[v.status]}22;color:${stC[v.status]}">${stL[v.status]||''}</span>
+          </div>`;
+        }).join('')}
+        ${!siteVisits.length?'<div style="text-align:center;color:var(--muted);padding:20px;font-size:.76rem">لا توجد زيارات</div>':''}
+      </div>
+    </div>`;
+  document.getElementById('siteDetailOverlay').classList.add('open');
 }
 
-async function deleteSite(){
-  if(!editSiteId)return;
-  const site=allSites.find(x=>x.id===editSiteId);
-  if(!confirm(`حذف موقع "${site?.name}"؟\nسيتم حذف كل الزيارات والبيانات المرتبطة به.`))return;
-  const{error}=await db.from('sites').update({is_active:false}).eq('id',editSiteId);
+// ── SCHEDULE MODAL ──
+let editSchedId=null;
+function openSchedModal(id=null){
+  editSchedId=id;
+  document.querySelectorAll('.ds-btn').forEach(b=>b.classList.remove('on'));
+  ['smSite','smEngineer','smNotes','smMonthDays'].forEach(k=>{const el=document.getElementById(k);if(el)el.value='';});
+  const freqEl=document.getElementById('smFreq');if(freqEl) freqEl.value='weekly';
+  const delBtn=document.getElementById('smDeleteBtn');if(delBtn) delBtn.style.display='none';
+  const title=document.getElementById('schedModalTitle');if(title) title.textContent=id?'✏️ تعديل الجدول':'📋 إضافة جدول ثابت';
+  if(id){
+    const sc=schedules2.find(x=>x.id===id);
+    if(sc){
+      document.getElementById('smSite').value=sc.site_id||'';
+      document.getElementById('smEngineer').value=sc.engineer_id||'';
+      document.getElementById('smFreq').value=sc.freq_type||'weekly';
+      document.getElementById('smNotes').value=sc.notes||'';
+      if(sc.month_days?.length) document.getElementById('smMonthDays').value=sc.month_days.join(',');
+      (sc.week_days||[]).map(Number).forEach(d=>document.querySelector(`.ds-btn[data-d="${d}"]`)?.classList.add('on'));
+      if(delBtn) delBtn.style.display='block';
+    }
+  }
+  toggleFreqFields2();
+  const smSiteEl=document.getElementById('smSite');
+  if(smSiteEl) smSiteEl.innerHTML='<option value="">— اختر موقع —</option>'+allSites.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  const smEngEl=document.getElementById('smEngineer');
+  if(smEngEl) smEngEl.innerHTML='<option value="">— بدون —</option>'+engineers.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  document.getElementById('schedOverlay2').classList.add('open');
+}
+function closeSchedModal(){document.getElementById('schedOverlay2').classList.remove('open');editSchedId=null;}
+document.getElementById('schedOverlay2').addEventListener('click',e=>{if(e.target===document.getElementById('schedOverlay2'))closeSchedModal();});
+function toggleDay(btn){btn.classList.toggle('on');}
+function toggleFreqFields2(){
+  const freq=document.getElementById('smFreq')?.value;
+  const wr=document.getElementById('weekDaysRow2');const mr=document.getElementById('monthDaysRow2');
+  if(wr) wr.style.display=(freq==='weekly'||freq==='biweekly')?'':'none';
+  if(mr) mr.style.display=(freq==='monthly_once'||freq==='monthly_twice')?'':'none';
+}
+async function saveSchedule(){
+  const siteId=document.getElementById('smSite').value;
+  if(!siteId){showToast('⚠️ اختر الموقع','t-err');return;}
+  const freq=document.getElementById('smFreq').value;
+  const weekDays=[...document.querySelectorAll('.ds-btn.on')].map(b=>parseInt(b.dataset.d));
+  const mdRaw=document.getElementById('smMonthDays').value;
+  const monthDays=mdRaw?mdRaw.split(',').map(x=>parseInt(x.trim())).filter(n=>n>0&&n<=31):[];
+  const payload={site_id:siteId,engineer_id:document.getElementById('smEngineer').value||null,freq_type:freq,week_days:weekDays,month_days:monthDays,notes:document.getElementById('smNotes').value.trim(),is_active:true};
+  if(editSchedId){
+    const{error}=await db.from('site_schedules').update(payload).eq('id',editSchedId);
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+    const idx=schedules2.findIndex(x=>x.id===editSchedId);if(idx>-1) schedules2[idx]={...schedules2[idx],...payload};
+  } else {
+    const{data,error}=await db.from('site_schedules').insert([payload]).select().single();
+    if(error){showToast('❌ '+error.message,'t-err');return;}
+    schedules2.unshift(data);
+  }
+  closeSchedModal();renderScheduleCards();renderMonthly();
+  showToast('✅ تم','t-ok');
+}
+async function deleteSchedule(){
+  if(!confirm('حذف؟')) return;
+  const{error}=await db.from('site_schedules').delete().eq('id',editSchedId);
   if(error){showToast('❌ '+error.message,'t-err');return;}
-  allSites=allSites.filter(x=>x.id!==editSiteId);
-  sites=allSites;
-  allVisits=allVisits.filter(v=>v.site_id!==editSiteId);
-  visits=allVisits;
-  closeSiteModal();renderSites();renderVisits();renderSchedule();
-  showToast('🗑️ تم حذف الموقع','t-ok');
+  schedules2=schedules2.filter(x=>x.id!==editSchedId);
+  closeSchedModal();renderScheduleCards();renderMonthly();
+  showToast('🗑️ تم','t-ok');
 }
 
-// ════════════════════════════════
-// DELETE ENGINEER
-// ════════════════════════════════
-async function deleteEngineer(){
-  if(!editEngId)return;
-  const eng=allEngineers.find(x=>x.id===editEngId);
-  if(!confirm(`حذف المهندس "${eng?.name}"؟`))return;
-  const{error}=await db.from('engineers').update({is_active:false}).eq('id',editEngId);
-  if(error){showToast('❌ '+error.message,'t-err');return;}
-  allEngineers=allEngineers.filter(x=>x.id!==editEngId);
-  engineers=allEngineers;
-  closeEngModal();renderEngineers();renderScores();populateEngSelector();
-  showToast('🗑️ تم حذف المهندس','t-ok');
-}
-
-// ════════════════════════════════
-// WORK PLAN PDF UPLOAD (site modal)
-// ════════════════════════════════
-async function handleSiteWpPdf(input){
-  const file=input.files[0];if(!file)return;
-  const stat=document.getElementById('sWpPdfStatus');
-  stat.textContent='⏳ جاري الرفع...';
-  const siteId=editSiteId||('new_'+Date.now());
-  const path=`workplans/${siteId}_${Date.now()}.pdf`;
-  const{data,error}=await db.storage.from('work-plans').upload(path,file,{upsert:true});
-  if(error){stat.textContent='❌ '+error.message;return;}
-  const{data:urlData}=db.storage.from('work-plans').getPublicUrl(path);
-  window._pendingWpPdf=urlData.publicUrl;
-  stat.textContent='✅ جاهز للحفظ';
-  document.getElementById('sWpPdfLink').innerHTML=`<a href="${urlData.publicUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.2);border-radius:6px;padding:3px 9px;font-size:.68rem;font-weight:700;text-decoration:none;margin-top:4px">📄 معاينة PDF</a>`;
-}
 
 // ════════════════════════════════
 // UTILS
