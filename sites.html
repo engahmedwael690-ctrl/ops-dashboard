@@ -308,6 +308,7 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
     <a href="email-reports.html" class="back-btn">📧 الإيميلات</a>
     <a href="index.html" class="back-btn">← الداش بورد</a>
     <a href="guide.html" class="back-btn">📖 الدليل</a>
+    <span style="font-size:.62rem;color:var(--muted);opacity:.55;white-space:nowrap">Dev: Ahmed Wael</span>
   </div>
 </header>
 
@@ -2086,6 +2087,52 @@ async function deleteSchedule(){
   showToast('🗑️ تم','t-ok');
 }
 
+
+// ════════════════════════════════
+// DELETE SITE / ENGINEER
+// ════════════════════════════════
+async function quickDeleteSite(siteId, siteName){
+  if(!confirm(`حذف موقع "${siteName}"؟
+سيتم حذف كل الزيارات والجداول المرتبطة.`)) return;
+  const{error}=await db.from('sites').update({is_active:false}).eq('id',siteId);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  allSites=allSites.filter(x=>x.id!==siteId);
+  sites=allSites;
+  allVisits=allVisits.filter(v=>v.site_id!==siteId);
+  visits=allVisits;
+  schedules2=schedules2.filter(x=>x.site_id!==siteId);
+  renderSites();renderVisits();renderMonthly();renderScheduleCards();
+  showToast('🗑️ تم حذف الموقع','t-ok');
+}
+
+async function deleteSite(){
+  if(!editSiteId) return;
+  const site=allSites.find(x=>x.id===editSiteId);
+  if(!confirm(`حذف موقع "${site?.name}"؟
+سيتم حذف كل الزيارات والجداول المرتبطة.`)) return;
+  const{error}=await db.from('sites').update({is_active:false}).eq('id',editSiteId);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  allSites=allSites.filter(x=>x.id!==editSiteId);
+  sites=allSites;
+  allVisits=allVisits.filter(v=>v.site_id!==editSiteId);
+  visits=allVisits;
+  schedules2=schedules2.filter(x=>x.site_id!==editSiteId);
+  closeSiteModal();
+  renderSites();renderVisits();renderMonthly();renderScheduleCards();
+  showToast('🗑️ تم حذف الموقع','t-ok');
+}
+
+async function deleteEngineer(){
+  if(!editEngId) return;
+  const eng=allEngineers.find(x=>x.id===editEngId);
+  if(!confirm(`حذف المهندس "${eng?.name}"؟`)) return;
+  const{error}=await db.from('engineers').update({is_active:false}).eq('id',editEngId);
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  allEngineers=allEngineers.filter(x=>x.id!==editEngId);
+  engineers=allEngineers;
+  closeEngModal();renderEngineers();renderScores();populateEngSelector();
+  showToast('🗑️ تم حذف المهندس','t-ok');
+}
 
 // ════════════════════════════════
 // UTILS
