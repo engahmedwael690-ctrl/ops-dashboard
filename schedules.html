@@ -95,6 +95,10 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
   white-space:nowrap;position:sticky;top:0;z-index:10;
   letter-spacing:.3px;
   box-shadow:0 2px 8px rgba(0,0,0,.5);
+  transition:background .15s,color .15s;
+}
+.mtbl th:not(:first-child):hover{
+  background:#1e3a5f;color:#60a5fa;
 }
 .mtbl th:first-child{
   text-align:right;min-width:150px;padding:8px 14px;
@@ -680,6 +684,21 @@ function generateDates(sc, fromDateStr, count=60){
 // ══════════════════════
 // MONTHLY TABLE
 // ══════════════════════
+function goToDate(dateStr){
+  // انتقل لتاب مواقع اليوم بالتاريخ دا
+  todayViewDate=dateStr;
+  const todayTab=document.querySelector('.tab[onclick*="today"]');
+  if(todayTab){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('act'));
+    document.getElementById('view-today').classList.add('show');
+    todayTab.classList.add('act');
+    renderToday();
+    // scroll to top
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+}
+
 function shiftMonth(dir){
   const mSel=document.getElementById('mMonth');
   const ySel=document.getElementById('mYear');
@@ -706,7 +725,10 @@ function renderMonthly(){
       const isFri=d.getDay()===5;
       const todayCls=isToday?'col-today-hdr':'';
       const friCls=isFri?'fri-col':'';
-      return `<th class="${todayCls} ${friCls}" style="min-width:42px">${i+1}<div style="font-size:.46rem;margin-top:2px;opacity:.8">${DAY_AR[d.getDay()]}</div></th>`;
+      return `<th class="${todayCls} ${friCls}" style="min-width:42px;cursor:pointer" onclick="goToDate('${ds}')" title="زيارات ${i+1} ${DAY_AR[d.getDay()]}">
+        <div style="font-size:.8rem;font-weight:800">${i+1}</div>
+        <div style="font-size:.46rem;margin-top:2px;opacity:.8">${DAY_AR[d.getDay()]}</div>
+      </th>`;
     }).join('');
 
   const tbody=document.getElementById('monthBody');
@@ -767,8 +789,8 @@ function renderMonthly(){
           </div>
           <span style="font-size:.55rem;color:var(--muted);white-space:nowrap">${done}/${total}</span>
         </div>
-        ${kaName?`<div style="font-size:.55rem;font-weight:700;margin-top:2px;color:${kaColor}">👤 ${kaName}</div>`:''}
-        ${defEng?`<div style="font-size:.56rem;color:var(--dim);margin-top:1px">👷 ${defEng.name.split(' ').slice(0,2).join(' ')}</div>`:''}
+        ${kaName?`<div style="font-size:.62rem;font-weight:800;margin-top:4px;color:${kaColor};display:flex;align-items:center;gap:3px"><span style="width:7px;height:7px;border-radius:50%;background:${kaColor};display:inline-block;flex-shrink:0"></span>${kaName}</div>`:'<div style="font-size:.58rem;color:#94a3b8;margin-top:4px">—</div>'}
+        ${defEng?`<div style="font-size:.55rem;color:var(--dim);margin-top:2px">👷 ${defEng.name.split(' ').slice(0,2).join(' ')}</div>`:''}
       </td>
       ${cells}
     </tr>`;
