@@ -208,6 +208,7 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 .sm-lbl{font-size:.62rem;color:var(--muted);margin-top:1px}
 
 /* EMPTY */
+.tab-spinner{padding:20px;text-align:center}
 .empty{padding:32px;text-align:center;color:var(--muted);font-size:.78rem}
 .empty-icon{font-size:2rem;opacity:.28;margin-bottom:8px}
 
@@ -787,6 +788,7 @@ async function init(){
   populateKADropdowns();
 
   await loadAll();
+  hideLoad();
 }
 
 function populateKADropdowns(){
@@ -800,29 +802,105 @@ function populateKADropdowns(){
     allUsers.map((u,i)=>`<option value="${u.id}">${u.full_name||u.email}</option>`).join('');
 }
 
-async function loadAll(){
-  // المرحلة 1: sites + engineers (خفيفة وسريعة)
-  const [s,e]=await Promise.all([
-    db.from('sites').select('*').eq('is_active',true).order('name'),
-    db.from('engineers').select('*').eq('is_active',true).order('name'),
-  ]);
-  sites=allSites=s.data||[];
-  engineers=allEngineers=e.data||[];
-  renderSites();renderEngineers();renderScores();
-  populateSiteDropdown();populateEngSelector();
-  hideLoad(); // أظهر الصفحة فوراً
+// ── FLAGS ──
+const tabLoaded={sites:false,visits:false,engineers:false,scores:false,schedule:false};
 
-  // المرحلة 2: الزيارات آخر 6 شهور فقط
-  const sixAgo=new Date();sixAgo.setMonth(sixAgo.getMonth()-6);
-  const fromDate=sixAgo.toISOString().split('T')[0];
-  const [v,ve]=await Promise.all([
-    db.from('visits').select('*').gte('scheduled_date',fromDate).order('scheduled_date',{ascending:false}),
-    db.from('visit_engineers').select('visit_id,engineer_id,rating,rating_notes')
-  ]);
-  visits=allVisits=v.data||[];
-  visitEngineers=ve.data||[];
-  allVisitEngineers=visitEngineers;
-  renderVisits();
+async function loadAll(){
+  // تاب المواقع بس — الأول
+  await loadTabData('sites');
+}
+
+async function loadTabData(tab){
+  if(tabLoaded[tab]) return; // مش تحمل تاني مرة
+
+  // ── Spinner داخل التاب ──
+  const tabEl=document.getElementById('view-'+tab);
+  if(tabEl&&!tabEl.querySelector('.tab-spinner')){
+    const sp=document.createElement('div');
+    sp.className='tab-spinner';
+    sp.innerHTML='<div class="spinner" style="width:28px;height:28px;margin:30px auto"></div>';
+    tabEl.prepend(sp);
+  }
+
+  if(tab==='sites'){
+    const{data}=await db.from('sites').select('*').eq('is_active',true).order('name');
+    sites=allSites=data||[];
+    tabLoaded.sites=true;
+    removeSp('sites');
+    renderSites();populateSiteDropdown();
+    // جيب المهندسين في الخلفية عشان الـ dropdown
+    db.from('engineers').select('*').eq('is_active',true).order('name').then(({data:ed})=>{
+      engineers=allEngineers=ed||[];
+      populateEngSelector();
+    });
+  }
+  else if(tab==='visits'){
+    const sixAgo=new Date();sixAgo.setMonth(sixAgo.getMonth()-6);
+    const fromDate=sixAgo.toISOString().split('T')[0];
+    const[{data:vd},{data:ved},{data:ed}]=await Promise.all([
+      db.from('visits').select('*').gte('scheduled_date',fromDate).order('scheduled_date',{ascending:false}),
+      db.from('visit_engineers').select('visit_id,engineer_id,rating,rating_notes'),
+      allEngineers.length?Promise.resolve({data:allEngineers}):db.from('engineers').select('*').eq('is_active',true).order('name')
+    ]);
+    visits=allVisits=vd||[];
+    visitEngineers=ved||[];allVisitEngineers=visitEngineers;
+    if(ed) engineers=allEngineers=ed;
+    tabLoaded.visits=true;
+    removeSp('visits');
+    renderVisits();
+  }
+  else if(tab==='engineers'){
+    if(!allEngineers.length){
+      const{data:ed}=await db.from('engineers').select('*').eq('is_active',true).order('name');
+      engineers=allEngineers=ed||[];
+    }
+    // نحتاج visit_engineers للسكور
+    if(!visitEngineers.length){
+      const{data:ved}=await db.from('visit_engineers').select('visit_id,engineer_id,rating,rating_notes');
+      visitEngineers=ved||[];allVisitEngineers=visitEngineers;
+    }
+    tabLoaded.engineers=true;
+    removeSp('engineers');
+    renderEngineers();populateEngSelector();
+  }
+  else if(tab==='scores'){
+    if(!allEngineers.length){
+      const{data:ed}=await db.from('engineers').select('*').eq('is_active',true).order('name');
+      engineers=allEngineers=ed||[];
+    }
+    if(!visitEngineers.length){
+      const{data:ved}=await db.from('visit_engineers').select('visit_id,engineer_id,rating,rating_notes');
+      visitEngineers=ved||[];allVisitEngineers=visitEngineers;
+    }
+    tabLoaded.scores=true;
+    removeSp('scores');
+    renderScores();
+  }
+  else if(tab==='schedule'){
+    // الجداول محتاجة كل حاجة
+    if(!allEngineers.length){
+      const{data:ed}=await db.from('engineers').select('*').eq('is_active',true).order('name');
+      engineers=allEngineers=ed||[];
+    }
+    if(!visitEngineers.length){
+      const{data:ved}=await db.from('visit_engineers').select('visit_id,engineer_id,rating,rating_notes');
+      visitEngineers=ved||[];allVisitEngineers=visitEngineers;
+    }
+    if(!allVisits.length){
+      const sixAgo=new Date();sixAgo.setMonth(sixAgo.getMonth()-6);
+      const{data:vd}=await db.from('visits').select('*').gte('scheduled_date',sixAgo.toISOString().split('T')[0]).order('scheduled_date',{ascending:false});
+      visits=allVisits=vd||[];
+    }
+    await loadSchedules();
+    tabLoaded.schedule=true;
+    removeSp('schedule');
+    renderToday();
+  }
+}
+
+function removeSp(tab){
+  const sp=document.querySelector('#view-'+tab+' .tab-spinner');
+  if(sp) sp.remove();
 }
 
 // ════════════════════════════════
@@ -833,6 +911,7 @@ function switchTab(name,el){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('act'));
   document.getElementById('view-'+name).classList.add('show');
   el.classList.add('act');
+  loadTabData(name); // حمّل بيانات التاب لو محتاج
 }
 
 // ════════════════════════════════
