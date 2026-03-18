@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>نظام المواقع والزيارات</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdn.skypack.dev/@supabase/supabase-js@2"></script>
 <style>
 :root,[data-theme="dark"]{
   --bg:#07090f;--s:#0f1623;--s2:#161e2e;--s3:#1c2840;
@@ -1843,7 +1843,7 @@ function exportMonthlyCSV(){
       rows.push([site?.name||'',date,DAY_AR2[new Date(date+'T12:00:00').getDay()],engNames,v?stMap[v.status]:'متوقعة',v?.visit_number||'',v?.general_notes||'']);
     });
   });
-  const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join(\n');
+  const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`جدول_${monthStr}.csv`;a.click();
   showToast('✅ تم التصدير','t-ok');
 }
