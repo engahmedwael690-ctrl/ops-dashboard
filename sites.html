@@ -254,44 +254,106 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 ═══════════════════════════════ */
 
 /* Tablet */
+/* ═══════════ TABLET ≤ 768px ═══════════ */
 @media(max-width:768px){
-  main{padding:12px}
-  header{padding:0 14px;height:52px}
-  .logo{font-size:.95rem}
-  .tabs-bar{padding:0 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+  /* Layout */
+  main{padding:10px}
+  header{padding:0 12px;height:50px}
+  .logo{font-size:.9rem}
+
+  /* Header — إخفاء النصوص الثانوية */
+  #hdrUserName{display:none}
+  header span[style*="Dev:"]{display:none}
+  .back-btn{padding:4px 9px;font-size:.66rem}
+
+  /* Tabs */
+  .tabs-bar{padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;gap:0}
   .tabs-bar::-webkit-scrollbar{display:none}
-  .tab{padding:10px 12px;font-size:.72rem;white-space:nowrap;flex-shrink:0}
+  .tab{padding:9px 11px;font-size:.7rem;white-space:nowrap;flex-shrink:0}
+
+  /* Sub-tabs */
+  .stab{padding:8px 11px;font-size:.7rem;white-space:nowrap;flex-shrink:0}
+
+  /* Grid */
   .cards-grid{grid-template-columns:1fr}
   .fr2,.fr3{grid-template-columns:1fr}
-  .stat-mini{padding:10px 12px}
-  .sm-val{font-size:1.1rem}
-  .visit-actions{gap:4px}
-  .btn-sm{padding:4px 8px;font-size:.65rem}
-  .top-bar{flex-direction:column;align-items:stretch}
+
+  /* Top bar */
+  .top-bar{flex-direction:column;align-items:stretch;gap:8px}
   .top-bar .search-box{max-width:100%}
+  .top-bar>div{flex-wrap:wrap}
+
+  /* Stats */
+  #vstStatsRow{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .stat-mini{padding:10px 12px}
+
+  /* Visit actions */
+  .visit-actions{gap:4px;flex-wrap:wrap}
+  .btn-sm{padding:4px 8px;font-size:.64rem}
+  .tacts{opacity:1}
+
+  /* Modals — bottom sheet */
   .overlay{padding:0;align-items:flex-end}
-  .modal{border-radius:18px 18px 0 0;max-height:92vh;width:100%;max-width:100%}
+  .modal{border-radius:18px 18px 0 0;max-height:93vh;width:100%;max-width:100%}
   .modal-wide{width:100%}
+
+  /* Detail panel */
   .dp-header{flex-direction:column;align-items:flex-start;gap:8px}
-  .back-btn{padding:4px 10px;font-size:.68rem}
-  #vstStatsRow{grid-template-columns:1fr 1fr!important}
+
+  /* Monthly table */
+  .mtbl th,.mtbl td{padding:4px 2px}
+  .cell-visit{width:28px;height:28px;font-size:.85rem}
+
+  /* Schedule cards */
+  .sched-hdr{flex-wrap:wrap;gap:6px}
 }
 
-/* Mobile */
+/* ═══════════ MOBILE ≤ 480px ═══════════ */
 @media(max-width:480px){
-  main{padding:8px}
-  header{height:48px}
-  .logo{font-size:.85rem}
+  main{padding:6px}
+  header{height:46px}
+  .logo{font-size:.8rem}
+
+  /* إخفاء روابط الهيدر الأقل أهمية */
+  a.back-btn[href*="email"]{display:none}
+  a.back-btn[href*="guide"]{display:none}
+
+  /* Site card */
   .site-card-mid{grid-template-columns:1fr 1fr}
-  .visit-card-top{flex-wrap:wrap;gap:5px}
-  .score-row{flex-wrap:wrap;gap:6px}
-  .tbl th,.tbl td{padding:5px 6px;font-size:.6rem}
-  .eng-stats{gap:6px}
-  .eng-stat-val{font-size:.82rem}
-  .toast{right:8px;left:8px;bottom:10px;font-size:.7rem}
-  .mtitle{font-size:.88rem}
-  .sbtn{font-size:.82rem}
-  .tab{padding:8px 9px;font-size:.65rem}
+  .site-name{font-size:.82rem}
+
+  /* Visit card */
+  .visit-card-top{flex-wrap:wrap;gap:4px}
+  .visit-card{padding:10px 12px}
+
+  /* Eng card */
+  .eng-stats{gap:5px}
+  .eng-stat-val{font-size:.8rem}
+  .eng-card{padding:12px}
+
+  /* Score rows */
+  .score-row{flex-wrap:wrap;gap:5px}
+
+  /* Table */
+  .tbl th,.tbl td{padding:4px 5px;font-size:.58rem}
+
+  /* Monthly */
+  .mtbl td:first-child{min-width:90px;padding:5px 8px}
+  .mtbl th:first-child{min-width:90px}
+  .cell-visit{width:24px;height:24px;font-size:.75rem}
+
+  /* Toast */
+  .toast{right:6px;left:6px;bottom:8px;font-size:.68rem}
+
+  /* Modal */
+  .mtitle{font-size:.85rem}
+  .sbtn{font-size:.8rem;padding:9px}
+
+  /* Tabs */
+  .tab,.stab{padding:7px 9px;font-size:.63rem}
+
+  /* Top bar buttons */
+  .btn{padding:6px 12px;font-size:.72rem}
 }
 </style>
 </head>
