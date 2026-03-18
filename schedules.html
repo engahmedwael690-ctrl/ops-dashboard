@@ -223,10 +223,11 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
         <div id="todayDateLabel" style="font-size:1.1rem;font-weight:900;color:var(--ops)"></div>
         <div id="todaySubLabel" style="font-size:.7rem;color:var(--muted);margin-top:2px"></div>
       </div>
-      <div style="display:flex;gap:7px">
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" onclick="shiftToday(-1)">‹ أمس</button>
         <button class="btn btn-ghost btn-sm" onclick="goToday()">اليوم</button>
         <button class="btn btn-ghost btn-sm" onclick="shiftToday(1)">غداً ›</button>
+        <button class="btn btn-ops btn-sm" onclick="openAddVisitForDay()">+ إضافة زيارة</button>
       </div>
     </div>
   </div>
@@ -331,6 +332,37 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
   </div>
 </div>
 
+<!-- ══ ADD VISIT FOR DAY MODAL ══ -->
+<div class="overlay" id="addDayVisitOverlay">
+  <div class="modal">
+    <button class="mcls" onclick="closeAddVisitForDay()">✕</button>
+    <div class="mtitle" id="addDayVisitTitle">+ إضافة زيارة</div>
+    <div class="fr">
+      <label class="flbl">الموقع *</label>
+      <select class="fsel" id="advSite"><option value="">— اختر موقع —</option></select>
+    </div>
+    <div class="fr2">
+      <div class="fr" style="margin:0">
+        <label class="flbl">التاريخ *</label>
+        <input type="date" class="finput" id="advDate">
+      </div>
+      <div class="fr" style="margin:0">
+        <label class="flbl">رقم الزيارة</label>
+        <input type="number" class="finput" id="advNum" min="1" placeholder="تلقائي">
+      </div>
+    </div>
+    <div class="fr" style="margin-top:10px">
+      <label class="flbl">👷 المهندسون</label>
+      <div class="eng-selector" id="advEngSelector"></div>
+    </div>
+    <div class="fr">
+      <label class="flbl">ملاحظات</label>
+      <textarea class="ftxt" id="advNotes" placeholder="ملاحظات..." style="min-height:55px"></textarea>
+    </div>
+    <button class="sbtn sbtn-ops" onclick="saveAddVisitForDay()">💾 حفظ الزيارة</button>
+  </div>
+</div>
+
 <!-- ══ VISIT EDIT MODAL ══ -->
 <div class="overlay" id="visitEditOverlay">
   <div class="modal">
@@ -371,6 +403,14 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
       <button class="sbtn sbtn-ops" style="flex:1" onclick="saveVisitEdit()">💾 حفظ التعديل</button>
       <button class="sbtn sbtn-red" style="flex:0 0 auto;width:auto;padding:10px 18px;margin-top:6px" onclick="deleteVisitEdit()">🗑️</button>
     </div>
+  </div>
+</div>
+
+<!-- ══ SITE DETAIL MODAL ══ -->
+<div class="overlay" id="siteDetailOverlay">
+  <div class="modal" style="width:640px">
+    <button class="mcls" onclick="document.getElementById('siteDetailOverlay').classList.remove('open')">✕</button>
+    <div id="siteDetailContent"></div>
   </div>
 </div>
 
@@ -781,8 +821,8 @@ function renderMonthly(){
     const total=siteVisits.filter(v=>v.status!=='cancelled').length;
     const pct=total?Math.round(done/total*100):0;
     return `<tr>
-      <td title="${site.name}" style="border-right:3px solid ${kaColor}">
-        <div style="font-size:.75rem;font-weight:800;margin-bottom:2px">${siteName}</div>
+      <td title="${site.name} — اضغط للتفاصيل" style="border-right:3px solid ${kaColor};cursor:pointer" onclick="openSiteDetail('${site.id}')">
+        <div style="font-size:.75rem;font-weight:800;margin-bottom:2px;text-decoration:underline dotted;text-underline-offset:2px">${siteName}</div>
         <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
           <div style="flex:1;height:3px;background:var(--s3);border-radius:2px;overflow:hidden">
             <div style="width:${pct}%;height:100%;background:${pct>=100?'var(--ops)':'#3b82f6'};border-radius:2px;transition:width .4s"></div>
@@ -1134,6 +1174,126 @@ function renderToday(){
   }).join('');
 
   el.innerHTML = realHTML + (predHTML ? `<div style="font-size:.68rem;color:var(--muted);margin:14px 0 8px;font-weight:700">🔮 متوقعة — لم تُجدَّل بعد</div>${predHTML}` : '');
+}
+
+// ══════════════════════
+// ADD VISIT FOR DAY
+// ══════════════════════
+function openAddVisitForDay(){
+  // populate site dropdown
+  const el=document.getElementById('advSite');
+  el.innerHTML='<option value="">— اختر موقع —</option>'+
+    sites.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('advDate').value=todayViewDate;
+  document.getElementById('advNum').value='';
+  document.getElementById('advNotes').value='';
+  buildEngSelectorAdv('advEngSelector',[]);
+  document.getElementById('addDayVisitTitle').textContent=`+ زيارة — ${todayViewDate}`;
+  document.getElementById('addDayVisitOverlay').classList.add('open');
+}
+function closeAddVisitForDay(){document.getElementById('addDayVisitOverlay').classList.remove('open');}
+document.getElementById('addDayVisitOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('addDayVisitOverlay')) closeAddVisitForDay();
+});
+
+function buildEngSelectorAdv(containerId, selectedIds=[]){
+  const el=document.getElementById(containerId);
+  if(!engineers.length){el.innerHTML='<span style="font-size:.7rem;color:var(--muted)">لا يوجد مهندسون</span>';return;}
+  el.innerHTML=engineers.map(e=>
+    `<button type="button" class="eng-toggle ${selectedIds.includes(e.id)?'sel':''}" data-id="${e.id}" onclick="this.classList.toggle('sel')">${e.name}</button>`
+  ).join('');
+}
+
+async function saveAddVisitForDay(){
+  const siteId=document.getElementById('advSite').value;
+  const date=document.getElementById('advDate').value;
+  if(!siteId||!date){showToast('⚠️ اختر الموقع والتاريخ','t-err');return;}
+  const existingNum=visits.filter(v=>v.site_id===siteId).length;
+  const num=parseInt(document.getElementById('advNum').value)||existingNum+1;
+  const{data,error}=await db.from('visits').insert([{
+    site_id:siteId,scheduled_date:date,status:'scheduled',
+    visit_number:num,general_notes:document.getElementById('advNotes').value.trim()
+  }]).select().single();
+  if(error){showToast('❌ '+error.message,'t-err');return;}
+  visits.unshift(data);
+  const selEngs=[...document.querySelectorAll('#advEngSelector .eng-toggle.sel')].map(b=>b.dataset.id);
+  if(selEngs.length){
+    const ins=selEngs.map(eid=>({visit_id:data.id,engineer_id:eid}));
+    await db.from('visit_engineers').insert(ins);
+    ins.forEach((x,i)=>visitEngineers.push({...x,id:'adv'+Date.now()+i}));
+  }
+  closeAddVisitForDay();
+  renderToday();renderMonthly();
+  showToast('✅ تم إضافة الزيارة','t-ok');
+}
+
+// ══════════════════════
+// SITE DETAIL (from monthly)
+// ══════════════════════
+function openSiteDetail(siteId){
+  const site=sites.find(s=>s.id===siteId);
+  if(!site) return;
+  const kaIdx=allUsers.findIndex(u=>u.id===site.assigned_to);
+  const kaColor=kaIdx>=0?KA_COLORS[kaIdx%KA_COLORS.length]:'#94a3b8';
+  const kaName=kaIdx>=0?(allUsers[kaIdx].full_name||allUsers[kaIdx].email):'غير محدد';
+  const siteVisits=visits.filter(v=>v.site_id===siteId).sort((a,b)=>b.scheduled_date?.localeCompare(a.scheduled_date));
+  const done=siteVisits.filter(v=>v.status==='completed').length;
+  const sched=siteVisits.filter(v=>v.status==='scheduled').length;
+  const pct=site.agreed_visits?Math.round(done/site.agreed_visits*100):0;
+  const stColors={scheduled:'#3b82f6',completed:'#059669',postponed:'#d97706',cancelled:'#94a3b8'};
+  const stLabels={scheduled:'مجدولة',completed:'مكتملة',postponed:'مؤجلة',cancelled:'ملغية'};
+  const stIcons={scheduled:'📅',completed:'✅',postponed:'⏰',cancelled:'✕'};
+
+  document.getElementById('siteDetailContent').innerHTML=`
+    <div style="padding-left:28px">
+      <!-- Header -->
+      <div style="border-right:4px solid ${kaColor};padding-right:12px;margin-bottom:16px">
+        <div style="font-size:1.1rem;font-weight:900;color:#0f172a">${site.name}</div>
+        <div style="font-size:.72rem;color:#64748b;margin-top:3px">📍 ${site.region||'—'} ${site.address?'· '+site.address:''}</div>
+      </div>
+      <!-- KA + Stats -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:#f8fafc;border-radius:10px;padding:12px;border:1px solid #e2e8f0">
+          <div style="font-size:.62rem;color:#94a3b8;margin-bottom:5px;font-weight:700">👤 KEY ACCOUNT</div>
+          <div style="font-size:.88rem;font-weight:900;color:${kaColor}">${kaName}</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:12px;border:1px solid #e2e8f0">
+          <div style="font-size:.62rem;color:#94a3b8;margin-bottom:5px;font-weight:700">📊 الإنجاز</div>
+          <div style="font-size:.88rem;font-weight:900;color:#0f172a">${done} / ${site.agreed_visits||'?'}</div>
+          <div style="height:4px;background:#e2e8f0;border-radius:2px;margin-top:5px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${pct>=100?'#059669':'#3b82f6'};border-radius:2px"></div>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:12px;border:1px solid #e2e8f0">
+          <div style="font-size:.62rem;color:#94a3b8;margin-bottom:5px;font-weight:700">📞 المسؤول</div>
+          <div style="font-size:.8rem;font-weight:700;color:#374151">${site.client_name||'—'}</div>
+          <div style="font-size:.68rem;color:#64748b">${site.client_phone||''}</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:12px;border:1px solid #e2e8f0">
+          <div style="font-size:.62rem;color:#94a3b8;margin-bottom:5px;font-weight:700">📋 قيد الجدولة</div>
+          <div style="font-size:.88rem;font-weight:900;color:#2563eb">${sched} زيارة</div>
+        </div>
+      </div>
+      <!-- Visits list -->
+      <div style="font-size:.72rem;font-weight:800;color:#0f172a;margin-bottom:8px">آخر الزيارات</div>
+      <div style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+        ${siteVisits.slice(0,15).map(v=>{
+          const veList=visitEngineers.filter(x=>x.visit_id===v.id);
+          const engNames=veList.map(ve=>engineers.find(e=>e.id===ve.engineer_id)?.name||'').filter(Boolean).join(' / ');
+          return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:.9rem">${stIcons[v.status]||'📅'}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.76rem;font-weight:700;color:#1e293b">${v.scheduled_date||'—'} <span style="color:#94a3b8;font-weight:400">· زيارة ${v.visit_number||'?'}</span></div>
+              ${engNames?`<div style="font-size:.64rem;color:#64748b;margin-top:2px">👷 ${engNames}</div>`:''}
+            </div>
+            <span style="font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:4px;background:${stColors[v.status]}22;color:${stColors[v.status]}">${stLabels[v.status]||''}</span>
+          </div>`;
+        }).join('')}
+        ${siteVisits.length===0?'<div style="text-align:center;color:#94a3b8;padding:20px;font-size:.76rem">لا توجد زيارات بعد</div>':''}
+      </div>
+    </div>
+  `;
+  document.getElementById('siteDetailOverlay').classList.add('open');
 }
 
 init();
