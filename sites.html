@@ -208,7 +208,6 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 .sm-lbl{font-size:.62rem;color:var(--muted);margin-top:1px}
 
 /* EMPTY */
-.tab-spinner{padding:20px;text-align:center}
 .empty{padding:32px;text-align:center;color:var(--muted);font-size:.78rem}
 .empty-icon{font-size:2rem;opacity:.28;margin-bottom:8px}
 
@@ -366,7 +365,6 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
     </div>
     <button class="btn btn-blue" onclick="openVisitModal()">+ إضافة زيارة</button>
   </div>
-  <div id="visitsLoadNote" style="font-size:.65rem;color:var(--muted);margin-bottom:8px;text-align:left"></div>
   <div id="visitsList" style="display:flex;flex-direction:column;gap:8px"></div>
 </div>
 
@@ -803,104 +801,19 @@ function populateKADropdowns(){
 }
 
 // ── FLAGS ──
-const tabLoaded={sites:false,visits:false,engineers:false,scores:false,schedule:false};
-
 async function loadAll(){
-  // تاب المواقع بس — الأول
-  await loadTabData('sites');
-}
-
-async function loadTabData(tab){
-  if(tabLoaded[tab]) return; // مش تحمل تاني مرة
-
-  // ── Spinner داخل التاب ──
-  const tabEl=document.getElementById('view-'+tab);
-  if(tabEl&&!tabEl.querySelector('.tab-spinner')){
-    const sp=document.createElement('div');
-    sp.className='tab-spinner';
-    sp.innerHTML='<div class="spinner" style="width:28px;height:28px;margin:30px auto"></div>';
-    tabEl.prepend(sp);
-  }
-
-  if(tab==='sites'){
-    const{data}=await db.from('sites').select('*').eq('is_active',true).order('name');
-    sites=allSites=data||[];
-    tabLoaded.sites=true;
-    removeSp('sites');
-    renderSites();populateSiteDropdown();
-    // جيب المهندسين في الخلفية عشان الـ dropdown
-    db.from('engineers').select('*').eq('is_active',true).order('name').then(({data:ed})=>{
-      engineers=allEngineers=ed||[];
-      populateEngSelector();
-    });
-  }
-  else if(tab==='visits'){
-    const sixAgo=new Date();sixAgo.setMonth(sixAgo.getMonth()-6);
-    const fromDate=sixAgo.toISOString().split('T')[0];
-    const[{data:vd},{data:ved},{data:ed}]=await Promise.all([
-      db.from('visits').select('*').gte('scheduled_date',fromDate).order('scheduled_date',{ascending:false}),
-      db.from('visit_engineers').select('visit_id,engineer_id,rating,rating_notes'),
-      allEngineers.length?Promise.resolve({data:allEngineers}):db.from('engineers').select('*').eq('is_active',true).order('name')
-    ]);
-    visits=allVisits=vd||[];
-    visitEngineers=ved||[];allVisitEngineers=visitEngineers;
-    if(ed) engineers=allEngineers=ed;
-    tabLoaded.visits=true;
-    removeSp('visits');
-    renderVisits();
-  }
-  else if(tab==='engineers'){
-    if(!allEngineers.length){
-      const{data:ed}=await db.from('engineers').select('*').eq('is_active',true).order('name');
-      engineers=allEngineers=ed||[];
-    }
-    // نحتاج visit_engineers للسكور
-    if(!visitEngineers.length){
-      const{data:ved}=await db.from('visit_engineers').select('visit_id,engineer_id,rating,rating_notes');
-      visitEngineers=ved||[];allVisitEngineers=visitEngineers;
-    }
-    tabLoaded.engineers=true;
-    removeSp('engineers');
-    renderEngineers();populateEngSelector();
-  }
-  else if(tab==='scores'){
-    if(!allEngineers.length){
-      const{data:ed}=await db.from('engineers').select('*').eq('is_active',true).order('name');
-      engineers=allEngineers=ed||[];
-    }
-    if(!visitEngineers.length){
-      const{data:ved}=await db.from('visit_engineers').select('visit_id,engineer_id,rating,rating_notes');
-      visitEngineers=ved||[];allVisitEngineers=visitEngineers;
-    }
-    tabLoaded.scores=true;
-    removeSp('scores');
-    renderScores();
-  }
-  else if(tab==='schedule'){
-    // الجداول محتاجة كل حاجة
-    if(!allEngineers.length){
-      const{data:ed}=await db.from('engineers').select('*').eq('is_active',true).order('name');
-      engineers=allEngineers=ed||[];
-    }
-    if(!visitEngineers.length){
-      const{data:ved}=await db.from('visit_engineers').select('visit_id,engineer_id,rating,rating_notes');
-      visitEngineers=ved||[];allVisitEngineers=visitEngineers;
-    }
-    if(!allVisits.length){
-      const sixAgo=new Date();sixAgo.setMonth(sixAgo.getMonth()-6);
-      const{data:vd}=await db.from('visits').select('*').gte('scheduled_date',sixAgo.toISOString().split('T')[0]).order('scheduled_date',{ascending:false});
-      visits=allVisits=vd||[];
-    }
-    await loadSchedules();
-    tabLoaded.schedule=true;
-    removeSp('schedule');
-    renderToday();
-  }
-}
-
-function removeSp(tab){
-  const sp=document.querySelector('#view-'+tab+' .tab-spinner');
-  if(sp) sp.remove();
+  const [s,v,e,ve]=await Promise.all([
+    db.from('sites').select('*').eq('is_active',true).order('name'),
+    db.from('visits').select('*').order('scheduled_date',{ascending:false}),
+    db.from('engineers').select('*').eq('is_active',true).order('name'),
+    db.from('visit_engineers').select('*')
+  ]);
+  sites=allSites=s.data||[];
+  visits=allVisits=v.data||[];
+  engineers=allEngineers=e.data||[];
+  visitEngineers=ve.data||[];allVisitEngineers=visitEngineers;
+  renderSites();renderVisits();renderEngineers();renderScores();
+  populateSiteDropdown();populateEngSelector();
 }
 
 // ════════════════════════════════
@@ -911,7 +824,7 @@ function switchTab(name,el){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('act'));
   document.getElementById('view-'+name).classList.add('show');
   el.classList.add('act');
-  loadTabData(name); // حمّل بيانات التاب لو محتاج
+  if(name==='schedule') loadSchedules().then(renderToday);
 }
 
 // ════════════════════════════════
@@ -1075,12 +988,7 @@ document.getElementById('siteDetailOverlay').addEventListener('click',e=>{if(e.t
 function renderVisits(){
   let list=allVisits;
   if(visitFilter!=='all') list=list.filter(v=>v.status===visitFilter);
-  // إظهار عدد الزيارات المحملة
-  const loadNote=document.getElementById('visitsLoadNote');
-  if(loadNote){
-    const sixAgo=new Date();sixAgo.setMonth(sixAgo.getMonth()-6);
-    loadNote.textContent=`يعرض زيارات آخر 6 شهور (${allVisits.length} زيارة)`;
-  }
+
   // فلتر التاريخ
   const dateFrom=document.getElementById('vDateFrom')?.value||'';
   const dateTo=document.getElementById('vDateTo')?.value||'';
