@@ -591,6 +591,40 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
       <div style="font-size:.68rem;color:var(--muted);margin:10px 0 6px">نص خطة العمل</div>
       <textarea class="ftxt" id="sWpText" placeholder="اكتب خطة العمل هنا..." style="min-height:90px"></textarea>
     </div>
+    <!-- الجدول الثابت -->
+    <div id="sSchedSection" style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:12px">
+      <div style="font-size:.72rem;font-weight:800;color:var(--ops);margin-bottom:10px">📅 جدول الزيارات الثابت</div>
+      <div class="fr">
+        <label class="flbl">نوع التكرار</label>
+        <select class="fsel" id="sSchedFreq" onchange="toggleSSchedFields()">
+          <option value="">— بدون جدول —</option>
+          <option value="weekly">أسبوعي — يوم أو يومين ثابت</option>
+          <option value="biweekly">كل أسبوعين</option>
+          <option value="monthly_once">شهري — مرة واحدة</option>
+          <option value="monthly_twice">شهري — مرتين</option>
+          <option value="daily">يومي — كل يوم</option>
+        </select>
+      </div>
+      <div class="fr" id="sSchedWeekRow" style="display:none">
+        <label class="flbl">أيام الأسبوع</label>
+        <div class="days-sel">
+          <button class="ds-btn" data-sw="0" onclick="this.classList.toggle('on')">الأحد</button>
+          <button class="ds-btn" data-sw="1" onclick="this.classList.toggle('on')">الاثنين</button>
+          <button class="ds-btn" data-sw="2" onclick="this.classList.toggle('on')">الثلاثاء</button>
+          <button class="ds-btn" data-sw="3" onclick="this.classList.toggle('on')">الأربعاء</button>
+          <button class="ds-btn" data-sw="4" onclick="this.classList.toggle('on')">الخميس</button>
+          <button class="ds-btn" data-sw="6" onclick="this.classList.toggle('on')">السبت</button>
+        </div>
+      </div>
+      <div class="fr" id="sSchedMonthRow" style="display:none">
+        <label class="flbl">أيام الشهر (مثال: 5 أو 5,20)</label>
+        <input type="text" class="finput" id="sSchedMonthDays" placeholder="5 أو 5,20">
+      </div>
+      <div class="fr">
+        <label class="flbl">👷 المهندس الافتراضي</label>
+        <select class="fsel" id="sSchedEng"><option value="">— بدون مهندس —</option></select>
+      </div>
+    </div>
     <button class="sbtn sbtn-ops" onclick="saveSite()">💾 حفظ الموقع</button>
     <button class="sbtn" id="sDeleteBtn" style="display:none;margin-top:7px;background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.25)" onclick="deleteSite()">🗑️ حذف هذا الموقع</button>
   </div>
@@ -883,22 +917,54 @@ function filterSites(){renderSites();}
 let editSiteId=null;
 function openSiteModal(id=null){
   editSiteId=id;
+  // reset
+  document.querySelectorAll('.ds-btn[data-sw]').forEach(b=>b.classList.remove('on'));
+  ['sSchedFreq','sSchedMonthDays'].forEach(k=>{const el=document.getElementById(k);if(el)el.value='';});
+  const sSchedEngEl=document.getElementById('sSchedEng');
+  if(sSchedEngEl) sSchedEngEl.innerHTML='<option value="">— بدون مهندس —</option>'+allEngineers.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  const saEl=document.getElementById('sAssigned');
+  if(saEl) saEl.innerHTML='<option value="">— غير محدد —</option>'+allUsers.map(u=>`<option value="${u.id}">${u.full_name||u.email}</option>`).join('');
+  document.getElementById('sDeleteBtn').style.display='none';
+  document.getElementById('sWpPdfStatus').textContent='';
+  document.getElementById('sWpPdfLink').innerHTML='';
+
   if(id){
-    const s=sites.find(x=>x.id===id);
+    const s=allSites.find(x=>x.id===id)||sites.find(x=>x.id===id);
     if(s){
-      document.getElementById('sName').value=s.name;document.getElementById('sRegion').value=s.region||'';
-      document.getElementById('sAddress').value=s.address||'';document.getElementById('sClient').value=s.client_name||'';
-      document.getElementById('sPhone').value=s.client_phone||'';document.getElementById('sEmail').value=s.client_email||'';
-      document.getElementById('sAgreed').value=s.agreed_visits||0;document.getElementById('sFreq').value=s.visit_frequency||'monthly';
-      document.getElementById('sStart').value=s.contract_start||'';document.getElementById('sEnd').value=s.contract_end||'';
+      document.getElementById('sName').value=s.name||'';
+      document.getElementById('sRegion').value=s.region||'';
+      document.getElementById('sAddress').value=s.address||'';
+      document.getElementById('sClient').value=s.client_name||'';
+      document.getElementById('sPhone').value=s.client_phone||'';
+      document.getElementById('sEmail').value=s.client_email||'';
+      document.getElementById('sAgreed').value=s.agreed_visits||0;
+      document.getElementById('sFreq').value=s.visit_frequency||'monthly';
+      document.getElementById('sStart').value=s.contract_start||'';
+      document.getElementById('sEnd').value=s.contract_end||'';
       document.getElementById('sNotes').value=s.notes||'';
+      document.getElementById('sWpText').value=s.work_plan_text||'';
+      if(saEl) saEl.value=s.assigned_to||'';
+      if(s.work_plan_pdf) document.getElementById('sWpPdfLink').innerHTML=`<a href="${s.work_plan_pdf}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:var(--rdg);color:var(--red);border:1px solid rgba(252,92,125,.2);border-radius:6px;padding:3px 9px;font-size:.68rem;font-weight:700;text-decoration:none">📄 PDF الحالي</a>`;
+      document.getElementById('sDeleteBtn').style.display='block';
+      // تعبئة الجدول الثابت
+      const existSched=schedules2.find(x=>x.site_id===id);
+      if(existSched){
+        document.getElementById('sSchedFreq').value=existSched.freq_type||'';
+        if(sSchedEngEl) sSchedEngEl.value=existSched.engineer_id||'';
+        if(existSched.month_days?.length) document.getElementById('sSchedMonthDays').value=existSched.month_days.join(',');
+        (existSched.week_days||[]).map(Number).forEach(d=>document.querySelector(`.ds-btn[data-sw="${d}"]`)?.classList.add('on'));
+      }
     }
     document.getElementById('siteModalTitle').textContent='✏️ تعديل الموقع';
   } else {
-    ['sName','sRegion','sAddress','sClient','sPhone','sEmail','sNotes','sStart','sEnd'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('sAgreed').value=12;document.getElementById('sFreq').value='monthly';
+    ['sName','sRegion','sAddress','sClient','sPhone','sEmail','sNotes','sStart','sEnd','sWpText'].forEach(k=>{
+      const el=document.getElementById(k);if(el)el.value='';
+    });
+    document.getElementById('sAgreed').value=12;
+    document.getElementById('sFreq').value='monthly';
     document.getElementById('siteModalTitle').textContent='🏢 إضافة موقع جديد';
   }
+  toggleSSchedFields();
   document.getElementById('siteOverlay').classList.add('open');
 }
 function closeSiteModal(){document.getElementById('siteOverlay').classList.remove('open');editSiteId=null;}
@@ -921,10 +987,48 @@ async function saveSite(){
     const _si=allSites.findIndex(x=>x.id===editSiteId);
     if(_si>-1) allSites[_si]={...allSites[_si],...payload};
     sites=allSites;
-    closeSiteModal();renderSites();
+    // تحديث الجدول الثابت إن وجد أو إنشاء جديد
+    const freq=document.getElementById('sSchedFreq')?.value;
+    const weekDays=[...document.querySelectorAll('.ds-btn[data-sw].on')].map(b=>parseInt(b.dataset.sw));
+    const mdRaw=document.getElementById('sSchedMonthDays')?.value||'';
+    const monthDays=mdRaw?mdRaw.split(',').map(x=>parseInt(x.trim())).filter(n=>n>0&&n<=31):[];
+    const engId=document.getElementById('sSchedEng')?.value||null;
+    const existIdx=schedules2.findIndex(x=>x.site_id===editSiteId);
+    if(freq){
+      const sp={site_id:editSiteId,engineer_id:engId,freq_type:freq,week_days:weekDays,month_days:monthDays,is_active:true};
+      if(existIdx>-1){
+        await db.from('site_schedules').update(sp).eq('id',schedules2[existIdx].id);
+        schedules2[existIdx]={...schedules2[existIdx],...sp};
+      } else {
+        const{data:ns}=await db.from('site_schedules').insert([sp]).select().single();
+        if(ns) schedules2.unshift(ns);
+      }
+    } else if(!freq && existIdx>-1){
+      // لو مسح التكرار — احذف الجدول
+      await db.from('site_schedules').delete().eq('id',schedules2[existIdx].id);
+      schedules2.splice(existIdx,1);
+    }
+    closeSiteModal();renderSites();renderScheduleCards();renderMonthly();
     showToast('✅ تم التحديث','t-ok');
   } else {
-    closeSiteModal();await loadAll();showToast('✅ تم إضافة الموقع','t-ok');
+    // جيب الـ ID الجديد
+    const{data:newSite}=await db.from('sites').select('id').eq('name',payload.name).order('created_at',{ascending:false}).limit(1).single();
+    const newSiteId=newSite?.id;
+
+    // عمل الجدول الثابت لو اختار نوع تكرار
+    const freq=document.getElementById('sSchedFreq')?.value;
+    if(freq && newSiteId){
+      const weekDays=[...document.querySelectorAll('.ds-btn[data-sw].on')].map(b=>parseInt(b.dataset.sw));
+      const mdRaw=document.getElementById('sSchedMonthDays')?.value||'';
+      const monthDays=mdRaw?mdRaw.split(',').map(x=>parseInt(x.trim())).filter(n=>n>0&&n<=31):[];
+      const engId=document.getElementById('sSchedEng')?.value||null;
+      const schedPayload={site_id:newSiteId,engineer_id:engId||null,freq_type:freq,
+        week_days:weekDays,month_days:monthDays,is_active:true};
+      const{data:newSched}=await db.from('site_schedules').insert([schedPayload]).select().single();
+      if(newSched) schedules2.unshift(newSched);
+    }
+    closeSiteModal();await loadAll();
+    showToast(`✅ تم إضافة الموقع${freq?' + الجدول الثابت 📅':''}`, 't-ok');
   }
 }
 
@@ -1939,6 +2043,14 @@ function openSchedModal(id=null){
 function closeSchedModal(){document.getElementById('schedOverlay2').classList.remove('open');editSchedId=null;}
 document.getElementById('schedOverlay2').addEventListener('click',e=>{if(e.target===document.getElementById('schedOverlay2'))closeSchedModal();});
 function toggleDay(btn){btn.classList.toggle('on');}
+function toggleSSchedFields(){
+  const freq=document.getElementById('sSchedFreq')?.value||'';
+  const wr=document.getElementById('sSchedWeekRow');
+  const mr=document.getElementById('sSchedMonthRow');
+  if(wr) wr.style.display=(freq==='weekly'||freq==='biweekly')?'':'none';
+  if(mr) mr.style.display=(freq==='monthly_once'||freq==='monthly_twice')?'':'none';
+}
+
 function toggleFreqFields2(){
   const freq=document.getElementById('smFreq')?.value;
   const wr=document.getElementById('weekDaysRow2');const mr=document.getElementById('monthDaysRow2');
