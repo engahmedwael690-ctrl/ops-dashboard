@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{
+:root,[data-theme="dark"]{
   --bg:#07090f;--s:#0f1623;--s2:#161e2e;--s3:#1c2840;
   --ops:#00d4aa;--og:rgba(0,212,170,.12);
   --qual:#f59e0b;--qg:rgba(245,158,11,.12);
@@ -18,6 +18,13 @@
   --border:rgba(255,255,255,.06);--r:12px;
   /* key account colors */
   --ka1:#3b82f6;--ka2:#f59e0b;--ka3:#a855f7;--ka4:#ec4899;--ka5:#14b8a6;
+}
+[data-theme="light"]{
+  --bg:#f1f5f9;--s:#ffffff;--s2:#f8fafc;--s3:#e2e8f0;
+  --text:#0f172a;--muted:#94a3b8;--dim:#64748b;
+  --border:rgba(0,0,0,.08);
+  --og:rgba(0,180,130,.1);--blg:rgba(59,130,246,.1);
+  --qg:rgba(245,158,11,.1);--rdg:rgba(252,92,125,.1);--pg:rgba(168,85,247,.1);
 }
 body.light{
   --bg:#f1f5f9;--s:#ffffff;--s2:#f8fafc;--s3:#e2e8f0;
@@ -250,7 +257,7 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 }
 </style>
 </head>
-<body class="light">
+<body id="appBody">
 
 <div class="load-ov" id="loadOv"><div class="spinner"></div><div style="font-size:.78rem;color:var(--muted)">جاري التحميل...</div></div>
 
@@ -258,6 +265,7 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
   <div class="logo">🏢 نظام المواقع والزيارات</div>
   <div class="hdr-r">
     
+    <button onclick="toggleTheme()" id="themeBtn" class="back-btn" title="تبديل المظهر" style="cursor:pointer;min-width:36px;justify-content:center">☀️</button>
     <span id="hdrUserName" style="font-size:.72rem;color:var(--muted)"></span>
     <a href="schedules.html" class="back-btn">📅 الجداول</a>
     <a href="email-reports.html" class="back-btn">📧 الإيميلات</a>
@@ -575,6 +583,24 @@ let sites=[],visits=[],engineers=[],visitEngineers=[],visitPhotos=[],followups=[
 let allVisitEngineers=[];
 let currentUser=null, currentProfile=null, allUsers=[];
 const KA_COLORS=['#3b82f6','#f59e0b','#a855f7','#ec4899','#14b8a6'];
+
+function toggleTheme(){
+  const body=document.getElementById('appBody');
+  const isLight=body.getAttribute('data-theme')==='light';
+  body.setAttribute('data-theme', isLight?'dark':'light');
+  const btn=document.getElementById('themeBtn');
+  btn.textContent=isLight?'☀️':'🌙';
+  localStorage.setItem('siteTheme', isLight?'dark':'light');
+}
+(function(){
+  const saved=localStorage.getItem('siteTheme')||'light';
+  const body=document.getElementById('appBody');
+  if(body) body.setAttribute('data-theme',saved);
+  setTimeout(()=>{
+    const btn=document.getElementById('themeBtn');
+    if(btn) btn.textContent=saved==='light'?'🌙':'☀️';
+  },0);
+})();
 let activeSiteId=null,activeVisitId=null,activeEngId=null;
 let visitFilter='all';
 let allSites=[],allVisits=[],allEngineers=[];

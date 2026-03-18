@@ -7,7 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{
+/* ── THEME ── */
+:root,[data-theme="dark"]{
   --bg:#07090f;--s:#0f1623;--s2:#161e2e;--s3:#1c2840;
   --ops:#00d4aa;--og:rgba(0,212,170,.12);
   --qual:#f59e0b;--qg:rgba(245,158,11,.12);
@@ -17,6 +18,13 @@
   --text:#e2e8f0;--muted:#4a5568;--dim:#718096;
   --border:rgba(255,255,255,.06);--r:12px;
   --ka1:#3b82f6;--ka2:#f59e0b;--ka3:#a855f7;--ka4:#ec4899;--ka5:#14b8a6;
+}
+[data-theme="light"]{
+  --bg:#f1f5f9;--s:#ffffff;--s2:#f8fafc;--s3:#e2e8f0;
+  --text:#0f172a;--muted:#94a3b8;--dim:#64748b;
+  --border:rgba(0,0,0,.08);
+  --og:rgba(0,180,130,.1);--blg:rgba(59,130,246,.1);
+  --qg:rgba(245,158,11,.1);--rdg:rgba(252,92,125,.1);--pg:rgba(168,85,247,.1);
 }
 body.light{
   --bg:#f1f5f9;--s:#ffffff;--s2:#f8fafc;--s3:#e2e8f0;
@@ -196,12 +204,13 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
 }
 </style>
 </head>
-<body class="light">
+<body id="appBody">
 <div class="load-ov" id="loadOv"><div class="spinner"></div><div style="font-size:.76rem;color:var(--muted)">جاري التحميل...</div></div>
 <header>
   <div class="logo">📅 الجداول الثابتة</div>
   <div class="hdr-r">
     
+    <button onclick="toggleTheme()" id="themeBtn" class="back-btn" title="تبديل المظهر" style="cursor:pointer;min-width:36px;justify-content:center">☀️</button>
     <span id="hdrUserName" style="font-size:.72rem;color:var(--muted)"></span>
     <a href="sites.html" class="back-btn">🏢 المواقع</a>
     <a href="index.html" class="back-btn">← الداش بورد</a>
@@ -452,6 +461,25 @@ let sites=[], engineers=[], schedules=[], visits=[], visitEngineers=[];
 let editSchedId=null, editVisitId=null, wpSiteId=null;
 let currentUser=null, currentProfile=null, allUsers=[];
 const KA_COLORS=['#3b82f6','#f59e0b','#a855f7','#ec4899','#14b8a6'];
+
+function toggleTheme(){
+  const body=document.getElementById('appBody');
+  const isLight=body.getAttribute('data-theme')==='light';
+  body.setAttribute('data-theme', isLight?'dark':'light');
+  const btn=document.getElementById('themeBtn');
+  btn.textContent=isLight?'☀️':'🌙';
+  localStorage.setItem('schedTheme', isLight?'dark':'light');
+}
+// تطبيق الثيم المحفوظ
+(function(){
+  const saved=localStorage.getItem('schedTheme')||'light';
+  const body=document.getElementById('appBody');
+  body.setAttribute('data-theme',saved);
+  setTimeout(()=>{
+    const btn=document.getElementById('themeBtn');
+    if(btn) btn.textContent=saved==='light'?'🌙':'☀️';
+  },0);
+})();
 
 function toggleLight(){
   document.body.classList.toggle('light');
@@ -840,7 +868,15 @@ function renderMonthly(){
 // ══════════════════════
 // GENERATE MONTH VISITS
 // ══════════════════════
+async function requirePin(action){
+  const pin=prompt('🔐 أدخل الرقم السري للمتابعة:');
+  if(pin===null) return false; // cancelled
+  if(pin!=='0000'){showToast('❌ رقم سري خاطئ','t-err');return false;}
+  return true;
+}
+
 async function generateSiteMonth(schedId, siteId){
+  if(!await requirePin()) return;
   const month=parseInt(document.getElementById('mMonth').value);
   const year=parseInt(document.getElementById('mYear').value);
   const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
@@ -882,6 +918,7 @@ async function generateSiteMonth(schedId, siteId){
 }
 
 async function generateMonthVisits(){
+  if(!await requirePin()) return;
   const month=parseInt(document.getElementById('mMonth').value);
   const year=parseInt(document.getElementById('mYear').value);
   const monthStr=`${year}-${String(month+1).padStart(2,'0')}`;
@@ -968,6 +1005,7 @@ async function deleteVisitEdit(){
 }
 
 async function createVisitFromPred(siteId, date, schedId){
+  if(!await requirePin()) return;
   const sc=schedules.find(x=>x.id===schedId);
   const monthStr=date.slice(0,7);
   const existingNum=visits.filter(v=>v.site_id===siteId&&v.scheduled_date?.startsWith(monthStr)).length;
@@ -1205,6 +1243,7 @@ function buildEngSelectorAdv(containerId, selectedIds=[]){
 }
 
 async function saveAddVisitForDay(){
+  if(!await requirePin()) return;
   const siteId=document.getElementById('advSite').value;
   const date=document.getElementById('advDate').value;
   if(!siteId||!date){showToast('⚠️ اختر الموقع والتاريخ','t-err');return;}
