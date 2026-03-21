@@ -453,13 +453,20 @@ async function sendMessage(){
       return;
     }
 
-    const response=await fetch('/api/chat',{
+    const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+apiKey
+      },
       body:JSON.stringify({
-        apiKey,
-        system:buildSystemPrompt(),
-        messages:chatHistory.slice(-10)
+        model:'llama-3.3-70b-versatile',
+        max_tokens:1500,
+        temperature:0.3,
+        messages:[
+          {role:'system',content:buildSystemPrompt()},
+          ...chatHistory.slice(-10)
+        ]
       })
     });
 
