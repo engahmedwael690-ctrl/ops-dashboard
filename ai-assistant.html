@@ -492,11 +492,8 @@ async function sendMessage(){
           executedActions.push({action:action.action,result:result.message,success:result.success});
         }
         const cleanReply=reply.replace(/```json[\s\S]*?```/g,'').trim();
-        const summary=results.map(r=>(r.success?'✅':'❌')+' '+r.message).join('
-');
-        finalReply=cleanReply+(cleanReply?'
-
-':'')+summary;
+        const summary=results.map(r=>(r.success?'\u2705':'\u274C')+' '+r.message).join('\n');
+        finalReply=cleanReply+(cleanReply?'\n':'')+summary;
         addMessage(finalReply,'ai',results.every(r=>r.success));
       } catch(e){
         addMessage(reply,'ai');
