@@ -6,6 +6,12 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
 
+  // تحقق من الـ key
+  const key = process.env.OPENROUTER_KEY;
+  if (!key) {
+    return res.status(500).json({ error: { message: 'OPENROUTER_KEY not set in Vercel environment variables' } });
+  }
+
   try {
     const { messages, system } = req.body;
 
@@ -13,12 +19,12 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENROUTER_KEY}`,
+        'Authorization': `Bearer ${key}`,
         'HTTP-Referer': 'https://ops-dashboard-kappa-two.vercel.app',
         'X-Title': 'Ops Dashboard AI'
       },
       body: JSON.stringify({
-        model: 'nvidia/llama-3.1-nemotron-70b-instruct:free',
+        model: 'mistralai/mistral-7b-instruct:free',
         max_tokens: 1200,
         temperature: 0.3,
         messages: [
@@ -29,7 +35,6 @@ export default async function handler(req, res) {
     });
 
     const data = await orRes.json();
-
     if (data.error) return res.status(400).json({ error: { message: data.error.message } });
 
     const text = data.choices?.[0]?.message?.content || '—';
