@@ -18,7 +18,7 @@ export default async function handler(req, res) {
         'X-Title': 'Ops Dashboard AI'
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.1-8b-instruct:free',
+        model: 'nvidia/llama-3.1-nemotron-70b-instruct:free',
         max_tokens: 1200,
         temperature: 0.3,
         messages: [
