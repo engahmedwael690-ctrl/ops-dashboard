@@ -1,1 +1,10 @@
-{"name":"ops-dashboard","version":"1.0.0"} 
+{
+  "name": "ai-assistant-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build required'",
+    "start": "echo 'No start required'"
+  }
+}

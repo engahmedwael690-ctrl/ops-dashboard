@@ -1,72 +1,48 @@
 // api/chat.js
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
-export default async function handler(req) {
-  // Allow CORS
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  };
+export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   // Handle preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    res.status(200).end();
+    return;
   }
 
   // Only allow POST
   if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed. Use POST.' }),
-      {
-        status: 405,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      }
-    );
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
-    const body = await req.json();
-    const { messages, model } = body;
-    
-    // Get API Key from Authorization header
-    const authHeader = req.headers.get('Authorization') || '';
-    const apiKey = authHeader.replace('Bearer ', '').trim();
+    const { messages, model } = req.body;
+    const apiKey = req.headers.authorization?.replace('Bearer ', '').trim();
 
-    if (!apiKey || apiKey === 'undefined') {
-      return new Response(
-        JSON.stringify({ error: 'API Key is required' }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        }
-      );
+    if (!apiKey) {
+      res.status(401).json({ error: 'API Key is required' });
+      return;
     }
 
-    // Validate messages
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Messages array is required' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        }
-      );
+    if (!messages || !Array.isArray(messages)) {
+      res.status(400).json({ error: 'Messages array is required' });
+      return;
     }
 
-    // Call OpenRouter API
-    const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    // Call OpenRouter
+    const openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://your-app.vercel.app',
-        'X-Title': 'AI Assistant Dashboard',
+        'X-Title': 'AI Assistant',
       },
       body: JSON.stringify({
         model: model || 'meta-llama/llama-3-8b-instruct:free',
@@ -76,43 +52,22 @@ export default async function handler(req) {
       }),
     });
 
-    // Check OpenRouter response
-    if (!openRouterResponse.ok) {
-      const errorData = await openRouterResponse.json().catch(() => ({}));
-      console.error('OpenRouter Error:', errorData);
-      
-      return new Response(
-        JSON.stringify({ 
-          error: errorData.error?.message || `OpenRouter Error: ${openRouterResponse.status}` 
-        }),
-        {
-          status: openRouterResponse.status,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        }
-      );
+    const data = await openRouterRes.json();
+
+    if (!openRouterRes.ok) {
+      res.status(openRouterRes.status).json({ 
+        error: data.error?.message || 'OpenRouter error' 
+      });
+      return;
     }
 
-    const data = await openRouterResponse.json();
-
-    return new Response(
-      JSON.stringify(data),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      }
-    );
+    res.status(200).json(data);
 
   } catch (error) {
     console.error('Server Error:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal Server Error', 
-        details: error.message 
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      }
-    );
+    res.status(500).json({ 
+      error: 'Internal Server Error',
+      details: error.message 
+    });
   }
 }
