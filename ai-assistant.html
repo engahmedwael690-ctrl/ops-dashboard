@@ -192,6 +192,8 @@ function buildSys(){
     const en=ctx.ve.filter(x=>x.visit_id===v.id).map(ve=>ctx.engineers.find(e=>e.id===ve.engineer_id)?.name||'').filter(Boolean).join(',');
     return `${s?.name||'—'}|${v.status}|${en||'بدون'}`;
   }).join('\n')||'لا يوجد';
+const siteNames = ctx.sites.map(s => s.name).join('، ') || 'لا يوجد';
+const engNames  = ctx.engineers.map(e => e.name).join('، ') || 'لا يوجد';
 
   return `انت مساعد ذكي لنظام مواقع وزيارات. اليوم: ${today}
 
