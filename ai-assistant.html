@@ -35,7 +35,6 @@
             flex-direction: column;
         }
 
-        /* Header */
         .header {
             background: var(--surface);
             padding: 1rem;
@@ -84,7 +83,6 @@
             color: white;
         }
 
-        /* Main Chat Container */
         .chat-container {
             flex: 1;
             max-width: 1200px;
@@ -96,7 +94,6 @@
             gap: 1rem;
         }
 
-        /* Settings Panel */
         .settings-panel {
             background: var(--surface);
             padding: 1rem;
@@ -161,7 +158,6 @@
             border-color: var(--primary);
         }
 
-        /* Quick Actions */
         .quick-actions {
             display: flex;
             gap: 0.5rem;
@@ -170,6 +166,8 @@
             background: var(--surface);
             border-radius: 12px;
             box-shadow: var(--shadow);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .quick-action-btn {
@@ -189,7 +187,6 @@
             border-color: var(--primary);
         }
 
-        /* Chat Messages */
         .chat-messages {
             flex: 1;
             background: var(--surface);
@@ -247,6 +244,7 @@
             border-radius: 12px;
             line-height: 1.6;
             font-size: 0.95rem;
+            word-wrap: break-word;
         }
 
         .message.user .message-content {
@@ -254,15 +252,6 @@
             color: white;
         }
 
-        .message-content p {
-            margin-bottom: 0.5rem;
-        }
-
-        .message-content p:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Loading Indicator */
         .typing-indicator {
             display: flex;
             gap: 0.5rem;
@@ -288,7 +277,6 @@
             40% { transform: scale(1); }
         }
 
-        /* Input Area */
         .chat-input-area {
             background: var(--surface);
             padding: 1rem;
@@ -332,7 +320,6 @@
             cursor: not-allowed;
         }
 
-        /* Status Messages */
         .status-message {
             padding: 1rem;
             border-radius: 8px;
@@ -352,7 +339,26 @@
             border: 1px solid var(--success);
         }
 
-        /* Responsive Design */
+        .status-message.warning {
+            background: #fffbeb;
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .test-connection-btn {
+            background: var(--success);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .test-connection-btn:hover {
+            opacity: 0.9;
+        }
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -381,11 +387,6 @@
                 max-width: 95%;
             }
 
-            .quick-actions {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
             .chat-input-area {
                 flex-direction: column;
             }
@@ -412,7 +413,6 @@
             }
         }
 
-        /* Dark Mode Support */
         @media (prefers-color-scheme: dark) {
             :root {
                 --background: #0f172a;
@@ -438,7 +438,6 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="header-content">
             <h1>🤖 المساعد الذكي</h1>
@@ -450,9 +449,7 @@
         </div>
     </header>
 
-    <!-- Main Chat Container -->
     <main class="chat-container">
-        <!-- Settings Panel -->
         <section class="settings-panel">
             <div class="api-input-group">
                 <input 
@@ -464,50 +461,33 @@
                 <button class="btn btn-primary" onclick="saveApiKey()">
                     💾 حفظ
                 </button>
+                <button class="test-connection-btn" onclick="testConnection()">
+                    🧪 اختبار الاتصال
+                </button>
             </div>
             <button class="btn btn-secondary" onclick="clearChat()">
                 🗑️ مسح المحادثة
             </button>
         </section>
 
-        <!-- Quick Actions -->
         <section class="quick-actions">
-            <button class="quick-action-btn" onclick="sendQuickAction('أنشئ تقرير أسبوعي للمواقع')">
-                📊 تقرير أسبوعي
-            </button>
-            <button class="quick-action-btn" onclick="sendQuickAction('ما هي الزيارات المتأخرة اليوم؟')">
-                ⚠️ زيارات متأخرة
-            </button>
-            <button class="quick-action-btn" onclick="sendQuickAction('أعطني ملخص أداء المهندسين')">
-                👷 أداء المهندسين
-            </button>
-            <button class="quick-action-btn" onclick="sendQuickAction('ما هي المواقع التي تحتاج متابعة؟')">
-                📍 مواقع تحتاج متابعة
-            </button>
-            <button class="quick-action-btn" onclick="sendQuickAction('اقترح تحسينات للنظام')">
-                💡 تحسينات مقترحة
-            </button>
+            <button class="quick-action-btn" onclick="sendQuickAction('أنشئ تقرير أسبوعي للمواقع')">📊 تقرير أسبوعي</button>
+            <button class="quick-action-btn" onclick="sendQuickAction('ما هي الزيارات المتأخرة اليوم؟')">⚠️ زيارات متأخرة</button>
+            <button class="quick-action-btn" onclick="sendQuickAction('أعطني ملخص أداء المهندسين')">👷 أداء المهندسين</button>
+            <button class="quick-action-btn" onclick="sendQuickAction('ما هي المواقع التي تحتاج متابعة؟')">📍 مواقع تحتاج متابعة</button>
+            <button class="quick-action-btn" onclick="sendQuickAction('اقترح تحسينات للنظام')">💡 تحسينات مقترحة</button>
         </section>
 
-        <!-- Chat Messages -->
         <section class="chat-messages" id="chatMessages">
             <div class="message ai">
                 <div class="message-avatar">🤖</div>
                 <div class="message-content">
                     <p>مرحباً! 👋</p>
                     <p>أنا مساعدك الذكي لإدارة النظام. ضع مفتاح API من <a href="https://openrouter.ai/keys" target="_blank" style="color: var(--primary);">openrouter.ai</a> في الأعلى وابدأ في السؤال!</p>
-                    <p>يمكنني مساعدتك في:</p>
-                    <ul style="margin-right: 1.5rem; margin-top: 0.5rem;">
-                        <li>تحليل بيانات المواقع والزيارات</li>
-                        <li>إنشاء تقارير تلقائية</li>
-                        <li>تتبع أداء المهندسين</li>
-                        <li>الإجابة على استفسارات النظام</li>
-                    </ul>
                 </div>
             </div>
         </section>
 
-        <!-- Input Area -->
         <section class="chat-input-area">
             <input 
                 type="text" 
@@ -522,19 +502,16 @@
     </main>
 
     <script>
-        // === Configuration ===
-        const API_ENDPOINT = '/api/chat'; // Vercel Serverless Function
+        const API_ENDPOINT = '/api/chat';
         const FREE_MODELS = [
             'meta-llama/llama-3-8b-instruct:free',
             'mistralai/mistral-7b-instruct:free',
             'google/gemma-7b-it:free'
         ];
 
-        // === State Management ===
         let conversationHistory = [];
         let apiKey = localStorage.getItem('openrouter_api_key') || '';
 
-        // === Initialize ===
         document.addEventListener('DOMContentLoaded', () => {
             if (apiKey) {
                 document.getElementById('apiKey').value = apiKey;
@@ -542,15 +519,14 @@
             }
         });
 
-        // === Functions ===
         function saveApiKey() {
             const key = document.getElementById('apiKey').value.trim();
-            if (key) {
+            if (key && key.length > 10) {
                 localStorage.setItem('openrouter_api_key', key);
                 apiKey = key;
                 showStatus('✅ تم حفظ مفتاح API بنجاح', 'success');
             } else {
-                showStatus('❌ يرجى إدخال مفتاح API صحيح', 'error');
+                showStatus('❌ يرجى إدخال مفتاح API صحيح (أكثر من 10 أحرف)', 'error');
             }
         }
 
@@ -578,12 +554,15 @@
         }
 
         function showStatus(message, type) {
+            const existingStatus = document.querySelector('.status-message');
+            if (existingStatus) existingStatus.remove();
+
             const statusDiv = document.createElement('div');
             statusDiv.className = `status-message ${type}`;
             statusDiv.textContent = message;
             document.querySelector('.chat-container').insertBefore(statusDiv, document.getElementById('chatMessages'));
             
-            setTimeout(() => statusDiv.remove(), 3000);
+            setTimeout(() => statusDiv.remove(), 4000);
         }
 
         function addMessage(content, isUser = false) {
@@ -591,9 +570,15 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
             
+            // Convert markdown-like formatting to HTML
+            const formattedContent = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+            
             messageDiv.innerHTML = `
                 <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
-                <div class="message-content">${content}</div>
+                <div class="message-content">${formattedContent}</div>
             `;
             
             chatMessages.appendChild(messageDiv);
@@ -628,6 +613,42 @@
             }
         }
 
+        async function testConnection() {
+            const key = document.getElementById('apiKey').value.trim();
+            if (!key) {
+                showStatus('❌ يرجى إدخال مفتاح API أولاً', 'error');
+                return;
+            }
+
+            showStatus('🧪 جاري اختبار الاتصال...', 'warning');
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'user', content: 'قل مرحب فقط' }
+                        ],
+                        model: FREE_MODELS[0]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.choices) {
+                    showStatus('✅ الاتصال ناجح! المفتاح يعمل', 'success');
+                } else {
+                    showStatus(`❌ فشل الاتصال: ${data.error?.message || response.status}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ خطأ في الاتصال: ${error.message}`, 'error');
+            }
+        }
+
         async function sendMessage() {
             const input = document.getElementById('userInput');
             const sendBtn = document.getElementById('sendBtn');
@@ -640,29 +661,19 @@
                 return;
             }
 
-            // Disable input while processing
             input.disabled = true;
             sendBtn.disabled = true;
             sendBtn.textContent = 'جاري الإرسال...';
 
-            // Add user message
             addMessage(message, true);
             input.value = '';
 
-            // Show typing indicator
             showTypingIndicator();
 
             try {
-                // Prepare system context for database awareness
                 const systemContext = `
                     أنت مساعد ذكي لنظام إدارة المواقع والزيارات.
-                    لديك القدرة على مساعدة المستخدمين في:
-                    1. تحليل بيانات المواقع والزيارات
-                    2. إنشاء تقارير
-                    3. تتبع أداء المهندسين
-                    4. الإجابة على استفسارات النظام
-                    
-                    ملاحظة: أنت لا تتصل بقاعدة البيانات مباشرة، ولكن يمكنك تقديم نصائح حول كيفية استخراج البيانات.
+                    ساعد المستخدم في تحليل البيانات، إنشاء التقارير، ومتابعة الأداء.
                     كن ودوداً ومحترفاً في ردودك.
                 `;
 
@@ -675,17 +686,18 @@
                     body: JSON.stringify({
                         messages: [
                             { role: 'system', content: systemContext },
-                            ...conversationHistory.slice(-10), // Last 10 messages for context
+                            ...conversationHistory.slice(-10),
                             { role: 'user', content: message }
                         ],
-                        model: FREE_MODELS[0] // Use free model
+                        model: FREE_MODELS[0]
                     })
                 });
 
                 removeTypingIndicator();
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error?.message || `HTTP ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -694,16 +706,26 @@
                     const aiResponse = data.choices[0].message.content;
                     addMessage(aiResponse, false);
                 } else {
-                    throw new Error('Invalid response format');
+                    throw new Error('استجابة غير صحيحة من الـ AI');
                 }
 
             } catch (error) {
                 removeTypingIndicator();
                 console.error('Error:', error);
-                addMessage(`❌ حدث خطأ: ${error.message}. تأكد من صحة مفتاح API.`, false);
+                
+                let errorMessage = `❌ حدث خطأ: ${error.message}`;
+                
+                if (error.message.includes('401')) {
+                    errorMessage = '❌ مفتاح API غير صحيح أو منتهي الصلاحية';
+                } else if (error.message.includes('500')) {
+                    errorMessage = '❌ خطأ في السيرفر - تأكد من وجود ملف api/chat.js على Vercel';
+                } else if (error.message.includes('429')) {
+                    errorMessage = '⚠️ تجاوزت حد الطلبات المسموح - انتظر قليلاً';
+                }
+                
+                addMessage(errorMessage, false);
                 showStatus('❌ فشل الاتصال بالخادم', 'error');
             } finally {
-                // Re-enable input
                 input.disabled = false;
                 sendBtn.disabled = false;
                 sendBtn.textContent = 'إرسال 📤';
