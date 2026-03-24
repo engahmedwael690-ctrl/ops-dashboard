@@ -163,46 +163,35 @@ function buildSys(){
   const today=new Date().toISOString().split('T')[0];
   const thisMonth=today.slice(0,7);
   const todayV=ctx.visits.filter(v=>v.scheduled_date===today);
-  const FM={weekly:'اسبوعي',biweekly:'كل اسبوعين',monthly_once:'شهري',monthly_twice:'شهري مرتين',daily:'يومي'};
+  const FM={weekly:'اسبوعي',biweekly:'اسبوعين',monthly_once:'شهري',monthly_twice:'شهري مرتين',daily:'يومي'};
   const DAY=['احد','اثنين','ثلاثاء','اربعاء','خميس','جمعة','سبت'];
-  const NL='\n';
 
-  const siteNames=ctx.sites.map(s=>s.name).join(' | ');
-  const engNames=ctx.engineers.map(e=>e.name).join(' | ');
-
-  let sitesBlock='';
-  ctx.sites.forEach(s=>{
+  // مواقع — مختصر
+  const sitesBlock=ctx.sites.map(s=>{
     const sv=ctx.visits.filter(v=>v.site_id===s.id);
     const done=sv.filter(v=>v.status==='completed').length;
-    const sched=sv.filter(v=>v.status==='scheduled').length;
     const pct=s.agreed_visits?Math.round(done/s.agreed_visits*100):0;
-    const rem=Math.max(0,(s.agreed_visits||0)-done);
     const sc=ctx.scheds.find(x=>x.site_id===s.id);
     const eng=sc?ctx.engineers.find(e=>e.id===sc.engineer_id):null;
     const days=sc?(sc.week_days||[]).map(d=>DAY[d]).join(','):'';
-    sitesBlock+=`الموقع: ${s.name} | المنطقة: ${s.region||'-'} | عميل: ${s.client_name||'-'} | هاتف: ${s.client_phone||'-'}${NL}`;
-    sitesBlock+=`  زيارات: ${done}/${s.agreed_visits||'?'} (${pct}%) | باقي: ${rem} | مجدولة: ${sched}${NL}`;
-    sitesBlock+=`  جدول: ${sc?FM[sc.freq_type]+' '+days:'لا يوجد جدول'} | مهندس: ${eng?.name||'بدون'}${NL}`;
-  });
+    return `${s.name}|${s.region||''}|${done}/${s.agreed_visits||'?'}(${pct}%)|${sc?FM[sc.freq_type]+' '+days:'بدون جدول'}|${eng?.name||'بدون مهندس'}`;
+  }).join('\n')||'لا يوجد';
 
-  let engsBlock='';
-  ctx.engineers.forEach(e=>{
+  // مهندسون — مختصر
+  const engsBlock=ctx.engineers.map(e=>{
     const eVe=ctx.ve.filter(ve=>ve.engineer_id===e.id);
-    const total=eVe.length;
     const mCnt=eVe.filter(ve=>{const v=ctx.visits.find(x=>x.id===ve.visit_id);return v?.scheduled_date?.startsWith(thisMonth);}).length;
     const rs=eVe.filter(ve=>ve.rating).map(ve=>ve.rating);
-    const avg=rs.length?(rs.reduce((a,b)=>a+b,0)/rs.length).toFixed(1):'لا يوجد';
-    engsBlock+=`المهندس: ${e.name} | تخصص: ${e.specialty||'عام'} | هاتف: ${e.phone||'-'} | اجمالي: ${total} زيارة | الشهر: ${mCnt} | تقييم: ${avg}/5${NL}`;
-  });
+    const avg=rs.length?(rs.reduce((a,b)=>a+b,0)/rs.length).toFixed(1):'—';
+    return `${e.name}|${e.specialty||'عام'}|${eVe.length}زيارة|الشهر:${mCnt}|تقييم:${avg}`;
+  }).join('\n')||'لا يوجد';
 
-  let todayBlock='';
-  if(todayV.length){
-    todayV.forEach(v=>{
-      const s=ctx.sites.find(x=>x.id===v.site_id);
-      const engsN=ctx.ve.filter(x=>x.visit_id===v.id).map(ve=>ctx.engineers.find(e=>e.id===ve.engineer_id)?.name||'').filter(Boolean).join(', ');
-      todayBlock+=`${s?.name||'-'} | ${v.status} | زيارة ${v.visit_number||'?'} | ${engsN||'بدون مهندس'}${NL}`;
-    });
-  } else { todayBlock='لا توجد زيارات اليوم'; }
+  // زيارات اليوم
+  const todayBlock=todayV.map(v=>{
+    const s=ctx.sites.find(x=>x.id===v.site_id);
+    const en=ctx.ve.filter(x=>x.visit_id===v.id).map(ve=>ctx.engineers.find(e=>e.id===ve.engineer_id)?.name||'').filter(Boolean).join(',');
+    return `${s?.name||'—'}|${v.status}|${en||'بدون'}`;
+  }).join('\n')||'لا يوجد';
 
   return `انت مساعد ذكي لنظام مواقع وزيارات. اليوم: ${today}
 
@@ -274,7 +263,7 @@ async function go(txt){
         'X-Title':'Ops Dashboard AI'
       },
       body:JSON.stringify({
-        model:'openai/gpt-4o',
+        model:'meta-llama/llama-3.3-70b-instruct:free',
         max_tokens:1000,
         temperature:0.3,
         messages:[{role:'system',content:buildSys()},...hist.slice(-10)]
