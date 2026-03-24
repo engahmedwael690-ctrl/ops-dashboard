@@ -1,73 +1,46 @@
-// api/chat.js
-export const config = {
-  runtime: 'nodejs',
-};
-
 export default async function handler(req, res) {
-  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
 
-  // Only allow POST
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+  // تحقق من الـ key
+  const key = process.env.OPENROUTER_KEY;
+  if (!key) {
+    return res.status(500).json({ error: { message: 'OPENROUTER_KEY not set in Vercel environment variables' } });
   }
 
   try {
-    const { messages, model } = req.body;
-    const apiKey = req.headers.authorization?.replace('Bearer ', '').trim();
+    const { messages, system } = req.body;
 
-    if (!apiKey) {
-      res.status(401).json({ error: 'API Key is required' });
-      return;
-    }
-
-    if (!messages || !Array.isArray(messages)) {
-      res.status(400).json({ error: 'Messages array is required' });
-      return;
-    }
-
-    // Call OpenRouter
-    const openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://your-app.vercel.app',
-        'X-Title': 'AI Assistant',
+        'Authorization': `Bearer ${key}`,
+        'HTTP-Referer': 'https://ops-dashboard-kappa-two.vercel.app',
+        'X-Title': 'Ops Dashboard AI'
       },
       body: JSON.stringify({
-        model: model || 'meta-llama/llama-3-8b-instruct:free',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 1024,
-      }),
+        model: 'nvidia/llama-3.3-nemotron-super-49b-v1:free',
+        max_tokens: 1200,
+        temperature: 0.3,
+        messages: [
+          { role: 'system', content: system },
+          ...messages
+        ]
+      })
     });
 
-    const data = await openRouterRes.json();
+    const data = await orRes.json();
+    if (data.error) return res.status(400).json({ error: { message: data.error.message } });
 
-    if (!openRouterRes.ok) {
-      res.status(openRouterRes.status).json({ 
-        error: data.error?.message || 'OpenRouter error' 
-      });
-      return;
-    }
+    const text = data.choices?.[0]?.message?.content || '—';
+    return res.status(200).json({ content: [{ text }] });
 
-    res.status(200).json(data);
-
-  } catch (error) {
-    console.error('Server Error:', error);
-    res.status(500).json({ 
-      error: 'Internal Server Error',
-      details: error.message 
-    });
+  } catch (err) {
+    return res.status(500).json({ error: { message: err.message } });
   }
 }
