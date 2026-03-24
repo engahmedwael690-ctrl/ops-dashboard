@@ -6,346 +6,183 @@
 <title>المساعد الذكي</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#f1f5f9;--s:#fff;--s2:#f8fafc;--s3:#e2e8f0;--text:#0f172a;--muted:#94a3b8;--dim:#64748b;--border:rgba(0,0,0,.08);--r:12px;--ai:#7c3aed;--aig:rgba(124,58,237,.08);--ops:#00c896;--og:rgba(0,200,150,.1);}
-body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
-body.dark{--bg:#07090f;--s:#0f1623;--s2:#161e2e;--s3:#1c2840;--text:#e2e8f0;--muted:#4a5568;--dim:#718096;--border:rgba(255,255,255,.07)}
-body.dark header{background:rgba(7,9,15,.97)}
-header{background:rgba(255,255,255,.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 18px;display:flex;align-items:center;justify-content:space-between;height:52px;flex-shrink:0}
-.logo{font-size:.95rem;font-weight:900;background:linear-gradient(135deg,var(--ai),#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hdr-r{display:flex;align-items:center;gap:7px}
-.hbtn{padding:4px 11px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--dim);font-family:'Cairo',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:all .15s}
-.hbtn:hover{background:var(--s3);color:var(--text)}
-main{flex:1;display:flex;flex-direction:column;max-width:860px;margin:0 auto;width:100%;padding:14px;gap:10px;min-height:0}
-.keybar{background:var(--s);border:1px solid var(--border);border-radius:9px;padding:9px 13px;display:flex;align-items:center;gap:8px;flex-shrink:0}
-.keybar label{font-size:.68rem;color:var(--muted);white-space:nowrap;font-weight:700}
-.keybar input{flex:1;border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-family:'Cairo',sans-serif;font-size:.75rem;background:var(--s2);color:var(--text);outline:none}
-.keybar input:focus{border-color:var(--ai)}
-.keybar button{padding:5px 13px;border-radius:7px;border:none;background:var(--ai);color:#fff;font-family:'Cairo',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap}
-.keybar a{font-size:.65rem;color:var(--ai);white-space:nowrap}
-.status{display:flex;align-items:center;gap:7px;padding:6px 13px;background:var(--s);border:1px solid var(--border);border-radius:9px;font-size:.67rem;color:var(--muted);flex-shrink:0}
-.sdot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
-.sdot.spin{background:var(--ai);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.quick{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
-.qbtn{padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:var(--s);color:var(--dim);font-family:'Cairo',sans-serif;font-size:.67rem;font-weight:700;cursor:pointer;transition:all .15s}
-.qbtn:hover{border-color:var(--ai);background:var(--aig);color:var(--ai)}
-.chat{flex:1;background:var(--s);border:1px solid var(--border);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
-.msg{display:flex;gap:8px;animation:fi .18s ease}
-@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+:root{
+  --bg:#f1f5f9;--s:#fff;--s2:#f8fafc;--s3:#e2e8f0;
+  --text:#0f172a;--muted:#94a3b8;--dim:#64748b;
+  --border:rgba(0,0,0,.08);--r:12px;
+  --ai:#7c3aed;--aig:rgba(124,58,237,.08);
+  --ops:#00c896;--og:rgba(0,200,150,.1)
+}
+body{
+  font-family:'Cairo',sans-serif;background:var(--bg);
+  color:var(--text);height:100vh;
+  display:flex;flex-direction:column;overflow:hidden
+}
+body.dark{
+  --bg:#07090f;--s:#0f1623;--s2:#161e2e;--s3:#1c2840;
+  --text:#e2e8f0;--muted:#4a5568;--dim:#718096;
+  --border:rgba(255,255,255,.07)
+}
+header{
+  background:rgba(255,255,255,.97);
+  border-bottom:1px solid var(--border);
+  padding:0 18px;height:52px;
+  display:flex;align-items:center;justify-content:space-between
+}
+.logo{font-weight:900}
+main{
+  flex:1;max-width:860px;margin:auto;width:100%;
+  padding:14px;display:flex;flex-direction:column;gap:10px
+}
+.chat{
+  flex:1;background:var(--s);
+  border:1px solid var(--border);
+  border-radius:12px;
+  display:flex;flex-direction:column;overflow:hidden
+}
+.msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.msg{display:flex;gap:8px}
 .msg.user{flex-direction:row-reverse}
-.av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0}
-.av.ai{background:var(--aig);color:var(--ai);border:1px solid rgba(124,58,237,.2)}
-.av.user{background:var(--og);color:var(--ops)}
-.bub{max-width:78%;padding:10px 14px;border-radius:11px;font-size:.8rem;line-height:1.6}
-.msg.ai .bub{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:3px 11px 11px 11px}
-.msg.user .bub{background:linear-gradient(135deg,var(--ai),#3b82f6);color:#fff;border-radius:11px 3px 11px 11px}
-.res-ok{font-size:.7rem;color:#16a34a;margin-top:5px;padding:4px 8px;background:rgba(22,163,74,.08);border-radius:5px}
-.res-err{font-size:.7rem;color:#dc2626;margin-top:5px;padding:4px 8px;background:rgba(220,38,38,.08);border-radius:5px}
-.typing{display:flex;gap:4px;padding:4px 0;align-items:center}
-.typing span{width:6px;height:6px;border-radius:50%;background:var(--ai);animation:bo .9s infinite}
-.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
-@keyframes bo{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
-.inp-row{border-top:1px solid var(--border);padding:10px 13px;display:flex;gap:8px;align-items:flex-end}
-.inp{flex:1;resize:none;font-family:'Cairo',sans-serif;font-size:.82rem;border:1px solid var(--border);border-radius:9px;padding:9px 13px;background:var(--s2);color:var(--text);outline:none;min-height:40px;max-height:100px;line-height:1.5;transition:border-color .15s}
-.inp:focus{border-color:rgba(124,58,237,.4)}
-.inp::placeholder{color:var(--muted)}
-.sbtn{width:40px;height:40px;border-radius:9px;border:none;background:linear-gradient(135deg,var(--ai),#3b82f6);color:#fff;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
-.sbtn:hover{filter:brightness(1.1)}
-.sbtn:disabled{opacity:.35;cursor:not-allowed}
-@media(max-width:768px){
-  main{padding:8px;gap:7px}
-  .keybar{flex-wrap:wrap;gap:6px}
-  .keybar input{min-width:0;width:100%}
-  .chat{min-height:0;flex:1}
-  .msgs{padding:10px}
-  .bub{max-width:90%;font-size:.78rem}
-  .inp-row{padding:8px 10px;gap:6px;flex-shrink:0}
-  .inp{font-size:.8rem;min-height:38px}
-  .sbtn{width:38px;height:38px}
-  .quick{gap:4px}
-  .qbtn{font-size:.62rem;padding:4px 9px}
+.av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.av.ai{background:var(--aig)}
+.av.user{background:var(--og)}
+.bub{
+  max-width:78%;padding:10px 14px;
+  border-radius:10px;font-size:.8rem;line-height:1.6
 }
-@media(max-width:480px){
-  header{padding:0 10px;height:46px}
-  .logo{font-size:.82rem}
-  .hbtn{padding:3px 8px;font-size:.62rem}
-  main{padding:6px;gap:5px}
-  .keybar{padding:7px 10px}
-  .inp-row{padding:7px 8px}
+.msg.ai .bub{background:var(--s2)}
+.msg.user .bub{background:linear-gradient(135deg,var(--ai),#3b82f6);color:#fff}
+.inp-row{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border)}
+.inp{
+  flex:1;resize:none;border:1px solid var(--border);
+  border-radius:8px;padding:8px;font-family:'Cairo'
 }
+.sbtn{width:42px;border:none;border-radius:8px;background:var(--ai);color:#fff}
+.res-ok{color:#16a34a;font-size:.7rem}
+.res-err{color:#dc2626;font-size:.7rem}
 </style>
 </head>
-<body id="bd">
+
+<body>
 <header>
   <div class="logo">🤖 المساعد الذكي</div>
-  <div class="hdr-r">
-    <button class="hbtn" onclick="toggleDark()" id="themeBtn">☀️</button>
-    <a href="sites.html" class="hbtn">🏢 المواقع</a>
-    <a href="index.html" class="hbtn">← الداش بورد</a>
-  </div>
 </header>
+
 <main>
-  <!-- KEY BAR -->
-  <div class="keybar">
-    <label>🔑 OpenRouter Key:</label>
-    <input type="password" id="keyInp" placeholder="sk-or-...">
-    <button onclick="saveKey()">حفظ</button>
-    <a href="https://openrouter.ai/keys" target="_blank">احصل على key مجاني</a>
-  </div>
-
-  <div class="status"><div class="sdot spin" id="dot"></div><span id="stTxt">جاري الاتصال...</span></div>
-
-  <div class="quick">
-    <button class="qbtn" onclick="go('كام موقع عندنا ونسبة إنجاز كل موقع؟')">📊 تقرير المواقع</button>
-    <button class="qbtn" onclick="go('إيه زيارات النهارده والمهندسين المسؤولين؟')">📅 زيارات اليوم</button>
-    <button class="qbtn" onclick="go('المواقع اللي نسبة إنجازها أقل من 50%؟')">⚠️ مواقع ناقصة</button>
-    <button class="qbtn" onclick="go('اعرضلي ملخص أداء كل مهندس والتقييمات')">👷 أداء المهندسين</button>
-  </div>
-
   <div class="chat">
-    <div class="msgs" id="msgs">
-      <div class="msg ai">
-        <div class="av ai">🤖</div>
-        <div class="bub">مرحباً! 👋<br><br>حط الـ API Key من <b>openrouter.ai</b> في الأعلى وأنا هتصل بداتابيزك وأساعدك في أي حاجة.</div>
-      </div>
-    </div>
+    <div class="msgs" id="msgs"></div>
     <div class="inp-row">
-      <textarea class="inp" id="inp" placeholder="اكتب طلبك... مثلاً: ضيف موقع اسمه X في القاهرة بـ 12 زيارة مع مهندس أحمد" rows="1" onkeydown="onKey(event)" oninput="rsz(this)"></textarea>
-      <button class="sbtn" id="sbtn" onclick="go()">➤</button>
+      <textarea class="inp" id="inp" placeholder="اكتب طلبك..."></textarea>
+      <button class="sbtn" onclick="go()">➤</button>
     </div>
   </div>
 </main>
 
 <script>
+/* ================= CONFIG ================= */
 const SB_URL='https://cpbevbjzndfmtvlrwael.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwYmV2Ymp6bmRmbXR2bHJ3YWVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3OTI3ODgsImV4cCI6MjA4ODM2ODc4OH0.XjKAh5d5LthYe1pSu2ecwFl4jOA3I3TDc8DRpSkHHvQ';
+const SB_KEY='YOUR_SUPABASE_ANON_KEY';
 const db=supabase.createClient(SB_URL,SB_KEY);
+
 let ctx={sites:[],engineers:[],visits:[],ve:[],scheds:[]};
 let hist=[];
 let busy=false;
 
-// theme
-(function(){if(localStorage.getItem('aiTheme')==='dark'){document.getElementById('bd').classList.add('dark');setTimeout(()=>document.getElementById('themeBtn').textContent='🌙',0);}})();
-function toggleDark(){const b=document.getElementById('bd');b.classList.toggle('dark');const d=b.classList.contains('dark');document.getElementById('themeBtn').textContent=d?'🌙':'☀️';localStorage.setItem('aiTheme',d?'dark':'light');}
-
-// key
-function saveKey(){
-  const v=document.getElementById('keyInp').value.trim();
-  if(!v){alert('حط الـ key الأول');return;}
-  localStorage.setItem('or_key',v);
-  document.getElementById('keyInp').value='sk-or-***';
-  setSt('Key محفوظ ✓ — جاري تحميل البيانات...',true);
-  loadCtx();
-}
-function getKey(){return localStorage.getItem('or_key')||'';}
-// load saved key
-(function(){const k=getKey();if(k){document.getElementById('keyInp').value='sk-or-***';setTimeout(loadCtx,100);}})();
-
+/* ================= LOAD DATA ================= */
 async function loadCtx(){
-  setSt('جاري تحميل البيانات...',true);
-  try{
-    const[s,e,v,ve,sc]=await Promise.all([
-      db.from('sites').select('*').eq('is_active',true).order('name'),
-      db.from('engineers').select('*').eq('is_active',true).order('name'),
-      db.from('visits').select('*').order('scheduled_date',{ascending:false}).limit(400),
-      db.from('visit_engineers').select('*'),
-      db.from('site_schedules').select('*').eq('is_active',true)
-    ]);
-    ctx.sites=s.data||[];ctx.engineers=e.data||[];ctx.visits=v.data||[];ctx.ve=ve.data||[];ctx.scheds=sc.data||[];
-    setSt('متصل ✓  '+ctx.sites.length+' موقع · '+ctx.engineers.length+' مهندس · '+ctx.visits.length+' زيارة',false);
-  }catch(e){setSt('خطأ: '+e.message,false);}
+  const [s,e,v,ve,sc]=await Promise.all([
+    db.from('sites').select('*').eq('is_active',true),
+    db.from('engineers').select('*').eq('is_active',true),
+    db.from('visits').select('*'),
+    db.from('visit_engineers').select('*'),
+    db.from('site_schedules').select('*').eq('is_active',true)
+  ]);
+  ctx.sites=s.data||[];
+  ctx.engineers=e.data||[];
+  ctx.visits=v.data||[];
+  ctx.ve=ve.data||[];
+  ctx.scheds=sc.data||[];
 }
+loadCtx();
 
+/* ================= SYSTEM PROMPT ================= */
 function buildSys(){
-  const today=new Date().toISOString().split('T')[0];
-  const thisMonth=today.slice(0,7);
-  const todayV=ctx.visits.filter(v=>v.scheduled_date===today);
-  const FM={weekly:'اسبوعي',biweekly:'اسبوعين',monthly_once:'شهري',monthly_twice:'شهري مرتين',daily:'يومي'};
-  const DAY=['احد','اثنين','ثلاثاء','اربعاء','خميس','جمعة','سبت'];
+  const siteNames = ctx.sites.map(s=>s.name).join('، ') || 'لا يوجد';
+  const engNames  = ctx.engineers.map(e=>e.name).join('، ') || 'لا يوجد';
 
-  // مواقع — مختصر
-  const sitesBlock=ctx.sites.map(s=>{
-    const sv=ctx.visits.filter(v=>v.site_id===s.id);
-    const done=sv.filter(v=>v.status==='completed').length;
-    const pct=s.agreed_visits?Math.round(done/s.agreed_visits*100):0;
-    const sc=ctx.scheds.find(x=>x.site_id===s.id);
-    const eng=sc?ctx.engineers.find(e=>e.id===sc.engineer_id):null;
-    const days=sc?(sc.week_days||[]).map(d=>DAY[d]).join(','):'';
-    return `${s.name}|${s.region||''}|${done}/${s.agreed_visits||'?'}(${pct}%)|${sc?FM[sc.freq_type]+' '+days:'بدون جدول'}|${eng?.name||'بدون مهندس'}`;
-  }).join('\n')||'لا يوجد';
+  return `
+انت مساعد ذكي لإدارة مواقع وزيارات.
 
-  // مهندسون — مختصر
-  const engsBlock=ctx.engineers.map(e=>{
-    const eVe=ctx.ve.filter(ve=>ve.engineer_id===e.id);
-    const mCnt=eVe.filter(ve=>{const v=ctx.visits.find(x=>x.id===ve.visit_id);return v?.scheduled_date?.startsWith(thisMonth);}).length;
-    const rs=eVe.filter(ve=>ve.rating).map(ve=>ve.rating);
-    const avg=rs.length?(rs.reduce((a,b)=>a+b,0)/rs.length).toFixed(1):'—';
-    return `${e.name}|${e.specialty||'عام'}|${eVe.length}زيارة|الشهر:${mCnt}|تقييم:${avg}`;
-  }).join('\n')||'لا يوجد';
+اسماء المواقع:
+${siteNames}
 
-  // زيارات اليوم
-  const todayBlock=todayV.map(v=>{
-    const s=ctx.sites.find(x=>x.id===v.site_id);
-    const en=ctx.ve.filter(x=>x.visit_id===v.id).map(ve=>ctx.engineers.find(e=>e.id===ve.engineer_id)?.name||'').filter(Boolean).join(',');
-    return `${s?.name||'—'}|${v.status}|${en||'بدون'}`;
-  }).join('\n')||'لا يوجد';
-const siteNames = ctx.sites.map(s => s.name).join('، ') || 'لا يوجد';
-const engNames  = ctx.engineers.map(e => e.name).join('، ') || 'لا يوجد';
+اسماء المهندسين:
+${engNames}
 
-  return `انت مساعد ذكي لنظام مواقع وزيارات. اليوم: ${today}
-
-اسماء المواقع: ${siteNames}
-اسماء المهندسين: ${engNames}
-
-تفاصيل المواقع:
-${sitesBlock}
-تفاصيل المهندسين:
-${engsBlock}
-زيارات اليوم:
-${todayBlock}
-
-== قواعد صارمة ==
-1. لو المستخدم طلب عملية — ارجع JSON في \`\`\`json\`\`\` ثم اشرح اللي عملته
-2. لو سأل عن بيانات — أجب بأرقام دقيقة من البيانات أعلاه
-3. استخدم اسم الموقع أو المهندس بالضبط كما هو في القائمة
-4. ممكن ترجع array لو في أكثر من عملية
-
-== العمليات ==
-
-إضافة موقع:
-{"action":"add_site","data":{"name":"الاسم","region":"المنطقة","agreed_visits":12,"client_name":"","client_phone":""}}
-
-إضافة مهندس:
-{"action":"add_engineer","data":{"name":"الاسم","specialty":"التخصص","phone":""}}
-
-إضافة زيارة:
-{"action":"add_visit","data":{"site_name":"اسم الموقع بالضبط","date":"2026-03-25","engineer_name":"اسم المهندس"}}
-
-إتمام زيارة:
-{"action":"complete_visit","data":{"site_name":"اسم الموقع بالضبط"}}
-
-تأجيل زيارة:
-{"action":"postpone_visit","data":{"site_name":"اسم الموقع","reason":"السبب"}}
-
-إنشاء جدول ثابت — مهم جداً:
-{"action":"create_schedule","data":{"site_name":"اسم الموقع بالضبط","freq_type":"weekly","week_days":[1,4],"engineer_name":"اسم المهندس"}}
-freq_type: weekly=أسبوعي | biweekly=كل أسبوعين | monthly_once=شهري | monthly_twice=شهري مرتين | daily=يومي
-week_days أرقام: 0=أحد 1=اثنين 2=ثلاثاء 3=أربعاء 4=خميس 6=سبت
-
-مثال جدول أسبوعي كل اثنين وخميس مع مهندس أحمد لموقع الفا:
-{"action":"create_schedule","data":{"site_name":"الفا","freq_type":"weekly","week_days":[1,4],"engineer_name":"أحمد"}}
-
-مثال ضيف موقع وعمله جدول دفعة واحدة:
-[{"action":"add_site","data":{"name":"X","region":"القاهرة","agreed_visits":12}},{"action":"create_schedule","data":{"site_name":"X","freq_type":"weekly","week_days":[1,4],"engineer_name":"أحمد"}}]
-
-أجب بالعربي دائماً.`;
+قواعد:
+- لا تخترع أسماء
+- استخدم الموجود فقط
+- لو عملية ارجع JSON فقط داخل ```json```
+`;
 }
 
-async function go(txt){
-  const key=getKey();
-  if(!key){addMsg('حط الـ API Key الأول من openrouter.ai ثم اضغط حفظ','ai');return;}
-  if(!ctx.sites.length){await loadCtx();}
+/* ================= CHAT ================= */
+function addMsg(text,role){
+  const c=document.getElementById('msgs');
+  const el=document.createElement('div');
+  el.className='msg '+role;
+  el.innerHTML=
+    '<div class="av '+role+'">'+(role==='ai'?'🤖':'أنت')+'</div>'+
+    '<div class="bub">'+text.replace(/\n/g,'<br>')+'</div>';
+  c.appendChild(el);c.scrollTop=c.scrollHeight;
+}
+
+async function go(){
+  if(busy)return;
   const inp=document.getElementById('inp');
-  const text=txt||inp.value.trim();
-  if(!text||busy)return;
-  inp.value='';rsz(inp);
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value='';
   addMsg(text,'user');
-  hist.push({role:'user',content:text});
-  setBusy(true);
+  busy=true;
+
   try{
     const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'Authorization':'Bearer '+key,
-        'HTTP-Referer':'https://ops-dashboard-kappa-two.vercel.app',
+        'Authorization':'Bearer '+localStorage.getItem('or_key'),
+        'HTTP-Referer':location.origin,
         'X-Title':'Ops Dashboard AI'
       },
       body:JSON.stringify({
-        model:'meta-llama/llama-3.3-70b-instruct:free',
-        max_tokens:1000,
-        temperature:0.3,
-        messages:[{role:'system',content:buildSys()},...hist.slice(-10)]
+        model:'meta-llama/llama-3.1-8b-instruct',
+        temperature:0.2,
+        max_tokens:600,
+        messages:[
+          {role:'system',content:buildSys()},
+          ...hist,
+          {role:'user',content:text}
+        ]
       })
     });
+
     const data=await res.json();
-    if(data.error)throw new Error(data.error.message);
-    const reply=data.choices?.[0]?.message?.content||'—';
+    if(!res.ok) throw new Error(data.error?.message || 'Provider error');
+
+    const reply=data.choices[0].message.content;
+    hist.push({role:'user',content:text});
     hist.push({role:'assistant',content:reply});
-    const jm=reply.match(/```json\s*([\s\S]*?)\s*```/);
-    let show=reply.replace(/```json[\s\S]*?```/g,'').trim();
-    let results=[];
-    if(jm){try{const p=JSON.parse(jm[1]);const acts=Array.isArray(p)?p:[p];for(const a of acts){results.push(await doAction(a));}}catch(e){results.push({ok:false,msg:'خطأ: '+e.message});}}
-    addMsg(show,'ai',results);
-  }catch(e){addMsg('❌ '+e.message,'ai');}
-  setBusy(false);
-}
+    addMsg(reply,'ai');
 
-async function doAction(a){
-  const d=a.data||{};
-  const findSite=()=>ctx.sites.find(s=>d.site_name&&(s.name.includes(d.site_name)||d.site_name.includes(s.name)));
-  try{
-    if(a.action==='add_site'){
-      const{error}=await db.from('sites').insert([{name:d.name,region:d.region||null,agreed_visits:parseInt(d.agreed_visits)||12,client_name:d.client_name||null,is_active:true}]);
-      if(error)throw error;await loadCtx();return{ok:true,msg:'تم اضافة موقع "'+d.name+'" ✓'};
-    }
-    if(a.action==='add_engineer'){
-      const{error}=await db.from('engineers').insert([{name:d.name,specialty:d.specialty||null,phone:d.phone||null,is_active:true}]);
-      if(error)throw error;await loadCtx();return{ok:true,msg:'تم اضافة المهندس "'+d.name+'" ✓'};
-    }
-    if(a.action==='add_visit'){
-      const site=findSite();if(!site)return{ok:false,msg:'لم اجد موقع "'+d.site_name+'"'};
-      const eng=d.engineer_name?ctx.engineers.find(e=>e.name.includes(d.engineer_name)):null;
-      const{data:nv,error}=await db.from('visits').insert([{site_id:site.id,scheduled_date:d.date,status:'scheduled',visit_number:ctx.visits.filter(v=>v.site_id===site.id).length+1}]).select().single();
-      if(error)throw error;
-      if(eng&&nv)await db.from('visit_engineers').insert([{visit_id:nv.id,engineer_id:eng.id}]);
-      await loadCtx();return{ok:true,msg:'تم اضافة زيارة لـ "'+site.name+'" '+d.date+(eng?' مع '+eng.name:'')+' ✓'};
-    }
-    if(a.action==='complete_visit'){
-      const site=findSite();if(!site)return{ok:false,msg:'لم اجد موقع "'+d.site_name+'"'};
-      const v=ctx.visits.find(v=>v.site_id===site.id&&v.status==='scheduled');if(!v)return{ok:false,msg:'لم اجد زيارة مجدولة'};
-      const{error}=await db.from('visits').update({status:'completed',actual_date:new Date().toISOString().split('T')[0]}).eq('id',v.id);
-      if(error)throw error;await loadCtx();return{ok:true,msg:'تم اتمام زيارة "'+site.name+'" ✓'};
-    }
-    if(a.action==='postpone_visit'){
-      const site=findSite();if(!site)return{ok:false,msg:'لم اجد موقع "'+d.site_name+'"'};
-      const v=ctx.visits.find(v=>v.site_id===site.id&&v.status==='scheduled');if(!v)return{ok:false,msg:'لم اجد زيارة مجدولة'};
-      const{error}=await db.from('visits').update({status:'postponed',postpone_reason:d.reason||''}).eq('id',v.id);
-      if(error)throw error;await loadCtx();return{ok:true,msg:'تم تاجيل زيارة "'+site.name+'" ✓'};
-    }
-    if(a.action==='create_schedule'){
-      const site=findSite();if(!site)return{ok:false,msg:'لم اجد موقع "'+d.site_name+'"'};
-      const eng=d.engineer_name?ctx.engineers.find(e=>e.name.includes(d.engineer_name)):null;
-      await db.from('site_schedules').update({is_active:false}).eq('site_id',site.id);
-      const{error}=await db.from('site_schedules').insert([{site_id:site.id,engineer_id:eng?.id||null,freq_type:d.freq_type||'weekly',week_days:d.week_days||[],month_days:d.month_days||[],is_active:true}]);
-      if(error)throw error;await loadCtx();return{ok:true,msg:'تم انشاء جدول لـ "'+site.name+'" ✓'};
-    }
-    return{ok:false,msg:'عملية غير معروفة: '+a.action};
-  }catch(e){return{ok:false,msg:e.message};}
+  }catch(e){
+    addMsg('❌ '+e.message,'ai');
+  }
+  busy=false;
 }
-
-function addMsg(text,role,results){
-  const c=document.getElementById('msgs');
-  const dots=c.querySelector('.dots-wrap');if(dots)dots.remove();
-  const el=document.createElement('div');el.className='msg '+role;
-  const fmt=text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
-  let extra='';
-  if(results&&results.length)extra=results.map(r=>'<div class="'+(r.ok?'res-ok':'res-err')+'">'+r.msg+'</div>').join('');
-  el.innerHTML='<div class="av '+role+'">'+(role==='ai'?'🤖':'أنت')+'</div><div class="bub">'+fmt+extra+'</div>';
-  c.appendChild(el);c.scrollTop=c.scrollHeight;
-}
-function setBusy(v){
-  busy=v;document.getElementById('sbtn').disabled=v;
-  const c=document.getElementById('msgs');
-  if(v){const d=document.createElement('div');d.className='msg ai dots-wrap';d.innerHTML='<div class="av ai">🤖</div><div class="bub"><div class="typing"><span></span><span></span><span></span></div></div>';c.appendChild(d);c.scrollTop=c.scrollHeight;}
-}
-function setSt(t,l){document.getElementById('stTxt').textContent=t;const d=document.getElementById('dot');d.className='sdot'+(l?' spin':'');if(!l)d.style.background='#22c55e';}
-function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go();}}
-function rsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
-loadCtx();
 </script>
 </body>
 </html>
