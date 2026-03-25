@@ -159,15 +159,7 @@ async function loadCtx(){
   }catch(e){setSt('خطأ: '+e.message,false);}
 }
 
-const FREE_MODELS=[
-  'deepseek/deepseek-chat-v3-0324:free',
-  'google/gemini-2.0-flash-thinking-exp:free',
-  'qwen/qwen3-235b-a22b:free',
-  'mistralai/devstral-small:free',
-  'microsoft/mai-ds-r1:free'
-];
-let modelIdx=0;
-function getModel(){return FREE_MODELS[modelIdx%FREE_MODELS.length];}
+
 
 function buildSys(){
   const today=new Date().toISOString().split('T')[0];
@@ -273,7 +265,7 @@ async function go(txt){
         'X-Title':'Ops Dashboard AI'
       },
       body:JSON.stringify({
-        model:getModel(),
+        model:'deepseek/deepseek-r1-0528:free',
         max_tokens:1000,
         temperature:0.3,
         messages:[{role:'system',content:buildSys()},...hist.slice(-10)]
@@ -289,13 +281,7 @@ async function go(txt){
     if(jm){try{const p=JSON.parse(jm[1]);const acts=Array.isArray(p)?p:[p];for(const a of acts){results.push(await doAction(a));}}catch(e){results.push({ok:false,msg:'خطأ: '+e.message});}}
     addMsg(show,'ai',results);
   }catch(e){
-    if(e.message.includes('Provider returned error')||e.message.includes('No endpoints')){
-      modelIdx++;
-      addMsg('جاري تجربة موديل آخر... ('+getModel()+')','ai');
-      setTimeout(()=>go(text),500);
-    } else {
-      addMsg('❌ '+e.message,'ai');
-    }
+    addMsg('❌ '+e.message,'ai');
   }
   setBusy(false);
 }
