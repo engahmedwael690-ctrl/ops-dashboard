@@ -195,8 +195,8 @@ function buildSys(){
 
   return `انت مساعد ذكي لنظام مواقع وزيارات. اليوم: ${today}
 
-اسماء المواقع: ${siteNames}
-اسماء المهندسين: ${engNames}
+اسماء المواقع: ${ctx.sites.map(s=>s.name).join(" | ")}
+اسماء المهندسين: ${ctx.engineers.map(e=>e.name).join(" | ")}
 
 تفاصيل المواقع:
 ${sitesBlock}
