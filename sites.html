@@ -6,6 +6,7 @@
 <title>نظام المواقع والزيارات</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <style>
 :root,[data-theme="dark"]{
   --bg:#07090f;--s:#0f1623;--s2:#161e2e;--s3:#1c2840;
@@ -256,97 +257,100 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 /* Tablet */
 /* ═══════════ TABLET ≤ 768px ═══════════ */
 @media(max-width:768px){
-  /* Layout */
   main{padding:10px}
-  header{padding:0 12px;height:50px}
-  .logo{font-size:.9rem}
-
-  /* Header — إخفاء النصوص الثانوية */
+  header{padding:0 10px;height:50px}
+  .logo{font-size:.88rem}
   #hdrUserName{display:none}
   header span[style*="Dev:"]{display:none}
-  .back-btn{padding:4px 9px;font-size:.66rem}
-
+  .back-btn{padding:4px 8px;font-size:.64rem}
   /* Tabs */
-  .tabs-bar{padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;gap:0}
+  .tabs-bar{padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;gap:0;scrollbar-width:none}
   .tabs-bar::-webkit-scrollbar{display:none}
-  .tab{padding:9px 11px;font-size:.7rem;white-space:nowrap;flex-shrink:0}
-
-  /* Sub-tabs */
-  .stab{padding:8px 11px;font-size:.7rem;white-space:nowrap;flex-shrink:0}
-
+  .tab{padding:9px 10px;font-size:.68rem;white-space:nowrap;flex-shrink:0}
+  .stab{padding:7px 10px;font-size:.68rem;white-space:nowrap;flex-shrink:0}
   /* Grid */
   .cards-grid{grid-template-columns:1fr}
   .fr2,.fr3{grid-template-columns:1fr}
-
   /* Top bar */
-  .top-bar{flex-direction:column;align-items:stretch;gap:8px}
+  .top-bar{flex-direction:column;align-items:stretch;gap:7px}
   .top-bar .search-box{max-width:100%}
-  .top-bar>div{flex-wrap:wrap}
-
+  .top-bar>div{flex-wrap:wrap;gap:5px}
+  /* Visit cards */
+  .visit-card-top{flex-wrap:wrap;gap:5px}
+  .visit-actions{gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .tacts{opacity:1}
+  .btn-sm{padding:5px 9px;font-size:.65rem}
   /* Stats */
   #vstStatsRow{grid-template-columns:1fr 1fr!important;gap:8px!important}
-  .stat-mini{padding:10px 12px}
-
-  /* Visit actions */
-  .visit-actions{gap:4px;flex-wrap:wrap}
-  .btn-sm{padding:4px 8px;font-size:.64rem}
-  .tacts{opacity:1}
-
+  .stat-mini{padding:9px 11px}
+  .sm-val{font-size:1.1rem}
+  /* Site card */
+  .site-card-bot{flex-direction:column;gap:8px}
+  .site-card-bot>div:first-child{width:100%}
   /* Modals — bottom sheet */
   .overlay{padding:0;align-items:flex-end}
-  .modal{border-radius:18px 18px 0 0;max-height:93vh;width:100%;max-width:100%}
+  .modal{border-radius:16px 16px 0 0;max-height:94vh;width:100%;max-width:100%}
   .modal-wide{width:100%}
-
   /* Detail panel */
   .dp-header{flex-direction:column;align-items:flex-start;gap:8px}
-
+  .dp-body{padding:12px}
+  /* Score */
+  .score-row{flex-wrap:wrap;gap:5px}
   /* Monthly table */
   .mtbl th,.mtbl td{padding:4px 2px}
-  .cell-visit{width:28px;height:28px;font-size:.85rem}
-
-  /* Schedule cards */
+  .cell-visit{width:26px;height:26px;font-size:.8rem}
   .sched-hdr{flex-wrap:wrap;gap:6px}
+  .sched-body{flex-wrap:wrap;gap:5px}
+  /* Info grid */
+  .info-grid{grid-template-columns:1fr 1fr}
+  /* Date filter */
+  #vDateFrom,#vDateTo{width:110px!important}
 }
 
-/* ═══════════ MOBILE ≤ 480px ═══════════ */
 @media(max-width:480px){
   main{padding:6px}
-  header{height:46px}
+  header{height:46px;padding:0 8px}
   .logo{font-size:.8rem}
-
-  /* إخفاء روابط الهيدر الأقل أهمية */
   a.back-btn[href*="email"]{display:none}
   a.back-btn[href*="guide"]{display:none}
-
+  a.back-btn[href*="ai-assistant"]{display:none}
   /* Site card */
   .site-card-mid{grid-template-columns:1fr 1fr}
-  .site-name{font-size:.82rem}
-
+  .site-name{font-size:.8rem}
+  .site-region{font-size:.62rem}
+  .site-card-top{padding:10px 12px}
   /* Visit card */
-  .visit-card-top{flex-wrap:wrap;gap:4px}
-  .visit-card{padding:10px 12px}
-
-  /* Eng card */
-  .eng-stats{gap:5px}
-  .eng-stat-val{font-size:.8rem}
-  .eng-card{padding:12px}
-
-  /* Score rows */
-  .score-row{flex-wrap:wrap;gap:5px}
-
+  .visit-card{padding:9px 11px}
+  .visit-card-top{gap:4px}
+  .btn-sm{padding:4px 7px;font-size:.62rem}
+  /* Eng */
+  .eng-stats{gap:5px;flex-wrap:wrap}
+  .eng-stat-val{font-size:.78rem}
+  .eng-card{padding:11px}
+  /* Score */
+  .score-row{flex-direction:column;align-items:flex-start;gap:6px}
+  .score-row>div:last-child{width:100%;justify-content:flex-end}
   /* Table */
-  .tbl th,.tbl td{padding:4px 5px;font-size:.58rem}
-
+  .tbl th,.tbl td{padding:3px 4px;font-size:.57rem}
   /* Monthly */
-  .mtbl td:first-child{min-width:90px;padding:5px 8px}
-  .mtbl th:first-child{min-width:90px}
-  .cell-visit{width:24px;height:24px;font-size:.75rem}
-
+  .mtbl td:first-child{min-width:85px;padding:5px 7px;font-size:.65rem}
+  .mtbl th:first-child{min-width:85px}
+  .cell-visit{width:22px;height:22px;font-size:.72rem}
   /* Toast */
-  .toast{right:6px;left:6px;bottom:8px;font-size:.68rem}
-
+  .toast{right:5px;left:5px;bottom:6px;font-size:.67rem}
   /* Modal */
-  .mtitle{font-size:.85rem}
+  .mtitle{font-size:.84rem}
+  .flbl{font-size:.68rem}
+  .finput,.fsel,.ftxt{font-size:.8rem}
+  .sbtn{font-size:.8rem;padding:9px}
+  /* Days selector */
+  .days-sel{gap:4px}
+  .ds-btn{padding:4px 8px;font-size:.65rem}
+  /* Quick btns */
+  .quick{gap:4px}
+  .qbtn{font-size:.62rem;padding:4px 8px}
+  /* Eng selector */
+  .eng-toggle{padding:5px 10px;font-size:.68rem}
   .sbtn{font-size:.8rem;padding:9px}
 
   /* Tabs */
@@ -443,8 +447,16 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
 
 <!-- ══ SCORE CARD TAB ══ -->
 <div class="view" id="view-scores">
+  <div class="top-bar" style="margin-bottom:12px">
+    <div style="font-size:.88rem;font-weight:800">⭐ سكور كارد المهندسين</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select class="finput" id="scoreMonthFilter" style="width:auto;font-size:.75rem" onchange="renderScores()">
+        <option value="">📅 كل الشهور</option>
+      </select>
+      <button class="btn btn-ghost" onclick="exportScoreExcel()">📥 تصدير Excel</button>
+    </div>
+  </div>
   <div class="detail-panel">
-    <div class="dp-header"><div class="dp-title">⭐ سكور كارد المهندسين</div></div>
     <div class="dp-body">
       <div id="scoresList"></div>
     </div>
@@ -1549,9 +1561,24 @@ async function saveEngineer(){
 // ════════════════════════════════
 // SCORES
 // ════════════════════════════════
+function populateScoreMonths(){
+  const months=new Set(allVisits.filter(v=>v.status==='completed').map(v=>v.scheduled_date?.slice(0,7)).filter(Boolean));
+  const sel=document.getElementById('scoreMonthFilter');
+  if(!sel) return;
+  const cur=sel.value;
+  const mnNames=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  sel.innerHTML='<option value="">📅 كل الشهور</option>'+
+    [...months].sort().reverse().map(m=>{
+      const [y,mo]=m.split('-');
+      return `<option value="${m}" ${m===cur?'selected':''}>${mnNames[parseInt(mo)-1]} ${y}</option>`;
+    }).join('');
+}
+
 function renderScores(){
   const el=document.getElementById('scoresList');
   if(!engineers.length){el.innerHTML=`<div class="empty"><div class="empty-icon">⭐</div>لا يوجد مهندسون</div>`;return;}
+  populateScoreMonths();
+  const monthFilter=document.getElementById('scoreMonthFilter')?.value||'';
   const rows=engineers.map(e=>{
     const eVisits=visitEngineers.filter(ve=>ve.engineer_id===e.id);
     const rated=eVisits.filter(ve=>ve.rating);
@@ -2169,6 +2196,70 @@ async function deleteSchedule(){
   showToast('🗑️ تم','t-ok');
 }
 
+
+// ════════════════════════════════
+// EXPORT SCORE EXCEL
+// ════════════════════════════════
+async function exportScoreExcel(){
+  showToast('📥 جاري التصدير...','t-info');
+  const monthFilter=document.getElementById('scoreMonthFilter')?.value||'';
+  const mnNames=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+  // جمع كل بيانات التقييمات
+  const rows=[];
+  visitEngineers.forEach(ve=>{
+    if(!ve.rating) return;
+    const v=allVisits.find(x=>x.id===ve.visit_id);
+    if(!v||v.status!=='completed') return;
+    if(monthFilter&&!v.scheduled_date?.startsWith(monthFilter)) return;
+    const eng=engineers.find(e=>e.id===ve.engineer_id);
+    const site=allSites.find(s=>s.id===v.site_id);
+    rows.push({
+      'التاريخ': v.scheduled_date||'',
+      'اسم المهندس': eng?.name||'—',
+      'اسم الموقع': site?.name||'—',
+      'نقاط الموقع': 5,
+      'النقاط المحققة': ve.rating||0,
+      'ملاحظات': ve.rating_notes||''
+    });
+  });
+
+  // ترتيب بالتاريخ
+  rows.sort((a,b)=>a['التاريخ'].localeCompare(b['التاريخ']));
+
+  if(!rows.length){showToast('⚠️ لا توجد تقييمات للتصدير','t-err');return;}
+
+  // إنشاء الـ workbook بـ SheetJS
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet([],{header:['التاريخ','اسم المهندس','اسم الموقع','نقاط الموقع','النقاط المحققة','ملاحظات']});
+
+  // إضافة صفوف فاضية في الأعلى زي الأصل (4 صفوف)
+  XLSX.utils.sheet_add_aoa(ws,[
+    ['','','','','',''],
+    ['','','','','',''],
+    ['','','','','',''],
+    ['','','','','',''],
+    ['التاريخ','اسم المهندس','اسم الموقع','نقاط الموقع','النقاط المحققة','ملاحظات'],
+  ],{origin:'B1'});
+
+  // إضافة البيانات
+  rows.forEach((row,i)=>{
+    XLSX.utils.sheet_add_aoa(ws,[[
+      row['التاريخ'],row['اسم المهندس'],row['اسم الموقع'],
+      row['نقاط الموقع'],row['النقاط المحققة'],row['ملاحظات']
+    ]],{origin:{r:5+i,c:1}});
+  });
+
+  // عرض الأعمدة
+  ws['!cols']=[{wch:18},{wch:13},{wch:13},{wch:20},{wch:19},{wch:13},{wch:40}];
+  ws['!rtl']=true;
+
+  XLSX.utils.book_append_sheet(wb,ws,'Score Card');
+
+  const monthLabel=monthFilter?mnNames[parseInt(monthFilter.split('-')[1])-1]+'_'+monthFilter.split('-')[0]:'الكل';
+  XLSX.writeFile(wb,`Score_${monthLabel}.xlsx`);
+  showToast('✅ تم تصدير الشيت','t-ok');
+}
 
 // ════════════════════════════════
 // DELETE SITE / ENGINEER
