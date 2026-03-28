@@ -90,10 +90,10 @@ main{flex:1;display:flex;flex-direction:column;max-width:860px;margin:0 auto;wid
 <main>
   <!-- KEY BAR -->
   <div class="keybar">
-    <label>🔑 DeepSeek API Key:</label>
+    <label>🔑 Gemini API Key:</label>
     <input type="password" id="keyInp" placeholder="sk-...">
     <button onclick="saveKey()">حفظ</button>
-    <a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek API Key</a>
+    <a href="https://aistudio.google.com/apikey" target="_blank">Gemini API Key</a>
   </div>
 
   <div class="status"><div class="sdot spin" id="dot"></div><span id="stTxt">جاري الاتصال...</span></div>
@@ -109,7 +109,7 @@ main{flex:1;display:flex;flex-direction:column;max-width:860px;margin:0 auto;wid
     <div class="msgs" id="msgs">
       <div class="msg ai">
         <div class="av ai">🤖</div>
-        <div class="bub">مرحباً! 👋<br><br>حط الـ <b>DeepSeek API Key</b> في الأعلى وأنا هتصل بداتابيزك وأساعدك في أي حاجة.</div>
+        <div class="bub">مرحباً! 👋<br><br>حط الـ <b>Gemini API Key</b> في الأعلى وأنا هتصل بداتابيزك وأساعدك في أي حاجة.</div>
       </div>
     </div>
     <div class="inp-row">
@@ -134,13 +134,13 @@ function toggleDark(){const b=document.getElementById('bd');b.classList.toggle('
 // key
 function saveKey(){
   const v=document.getElementById('keyInp').value.trim();
-  if(!v.startsWith('sk-')){alert('الـ key لازم يبدأ بـ sk-');return;}
-  localStorage.setItem('ds_key',v);
+  if(v.length<10){alert('key غير صحيح');return;}
+  localStorage.setItem('gemini_key',v);
   document.getElementById('keyInp').value='sk-or-***';
   setSt('Key محفوظ ✓ — جاري تحميل البيانات...',true);
   loadCtx();
 }
-function getKey(){return localStorage.getItem('ds_key')||'';}
+function getKey(){return localStorage.getItem('gemini_key')||'';}
 // load saved key
 (function(){const k=getKey();if(k){document.getElementById('keyInp').value='sk-or-***';setTimeout(loadCtx,100);}})();
 
@@ -246,7 +246,7 @@ week_days أرقام: 0=أحد 1=اثنين 2=ثلاثاء 3=أربعاء 4=خم
 
 async function go(txt){
   const key=getKey();
-  if(!key){addMsg('حط الـ DeepSeek API Key ثم اضغط حفظ','ai');return;}
+  if(!key){addMsg('حط الـ Gemini API Key ثم اضغط حفظ','ai');return;}
   if(!ctx.sites.length){await loadCtx();}
   const inp=document.getElementById('inp');
   const text=txt||inp.value.trim();
@@ -256,22 +256,19 @@ async function go(txt){
   hist.push({role:'user',content:text});
   setBusy(true);
   try{
-    const res=await fetch('https://api.deepseek.com/chat/completions',{
+    const res=await fetch('/api/chat',{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+key
-      },
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'deepseek-chat',
-        max_tokens:1000,
-        temperature:0.3,
-        messages:[{role:'system',content:buildSys()},...hist.slice(-10)]
+        key,
+        system:buildSys(),
+        messages:hist.slice(-10)
       })
     });
+    if(!res.ok){const t=await res.text();throw new Error(t.slice(0,120));}
     const data=await res.json();
     if(data.error)throw new Error(data.error.message);
-    const reply=data.choices?.[0]?.message?.content||'—';
+    const reply=data.content?.[0]?.text||'—';
     hist.push({role:'assistant',content:reply});
     const jm=reply.match(/```json\s*([\s\S]*?)\s*```/);
     let show=reply.replace(/```json[\s\S]*?```/g,'').trim();
