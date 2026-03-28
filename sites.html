@@ -395,7 +395,10 @@ main{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:18px}
     <div class="search-box">🔍 <input type="text" placeholder="ابحث عن موقع..." id="siteSearch" oninput="filterSites()"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
       <select class="finput" id="siteKAFilter" style="width:auto;font-size:.75rem" onchange="filterSites()">
-        <option value="">الكل</option>
+        <option value="">👥 الكل</option>
+      </select>
+      <select class="finput" id="siteMonthFilter" style="width:auto;font-size:.75rem" onchange="filterSites()">
+        <option value="">📅 كل الشهور</option>
       </select>
     </div>
     <button class="btn btn-ops" onclick="openSiteModal()">+ إضافة موقع</button>
@@ -940,11 +943,27 @@ function switchTab(name,el){
 // ════════════════════════════════
 // SITES
 // ════════════════════════════════
+function populateSiteMonthFilter(){
+  const sel=document.getElementById('siteMonthFilter');
+  if(!sel||sel.options.length>1) return;
+  const months=new Set(allVisits.map(v=>v.scheduled_date?.slice(0,7)).filter(Boolean));
+  const mn=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  // ترتيب تنازلي
+  [...months].sort().reverse().forEach(m=>{
+    const[y,mo]=m.split('-');
+    const opt=document.createElement('option');
+    opt.value=m;
+    opt.textContent=`${mn[parseInt(mo)-1]} ${y}`;
+    sel.appendChild(opt);
+  });
+}
+
 function renderSites(){
   const q=(document.getElementById('siteSearch')?.value||'').toLowerCase();
   const kaF=document.getElementById('siteKAFilter')?.value||'';
+  const monthF=document.getElementById('siteMonthFilter')?.value||'';
+  populateSiteMonthFilter();
   let list=allSites.length?allSites:sites;
-  // يوزر عادي يشوف مواقعه بس
   if(currentProfile?.role!=='admin'&&currentUser){
     list=list.filter(s=>s.assigned_to===currentUser.id||!s.assigned_to);
   }
@@ -952,11 +971,16 @@ function renderSites(){
   if(q) list=list.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.region||'').toLowerCase().includes(q));
   const grid=document.getElementById('sitesGrid');
   if(!list.length){grid.innerHTML=`<div class="empty"><div class="empty-icon">🏢</div>لا توجد مواقع</div>`;return;}
+  // label الشهر
+  const monthLabel=document.getElementById('siteMonthFilter')?.selectedOptions?.[0]?.textContent||'';
   grid.innerHTML=list.map(s=>{
-    const sVisits=visits.filter(v=>v.site_id===s.id);
+    // فلتر الزيارات حسب الشهر
+    let sVisits=visits.filter(v=>v.site_id===s.id);
+    if(monthF) sVisits=sVisits.filter(v=>v.scheduled_date?.startsWith(monthF));
     const done=sVisits.filter(v=>v.status==='completed').length;
-    const pct=s.agreed_visits?Math.round(done/s.agreed_visits*100):0;
-    const remaining=Math.max(0,s.agreed_visits-done);
+    const total=monthF?sVisits.filter(v=>v.status!=='cancelled').length:s.agreed_visits;
+    const pct=total?Math.round(done/total*100):0;
+    const remaining=Math.max(0,(monthF?total:s.agreed_visits)-done);
     const kaIdx=allUsers.findIndex(u=>u.id===s.assigned_to);
     const kaColor=kaIdx>=0?KA_COLORS[kaIdx%KA_COLORS.length]:'var(--ops)';
     const kaName=kaIdx>=0?(allUsers[kaIdx].full_name||allUsers[kaIdx].email):'';
@@ -971,7 +995,7 @@ function renderSites(){
       <div class="site-card-mid">
         <div class="site-info-item"><div>المسؤول</div><div class="site-info-val">${s.client_name||'—'}</div></div>
         <div class="site-info-item"><div>الهاتف</div><div class="site-info-val">${s.client_phone||'—'}</div></div>
-        <div class="site-info-item"><div>زيارات منجزة</div><div class="site-info-val" style="color:var(--ops)">${done} / ${s.agreed_visits}</div></div>
+        <div class="site-info-item"><div>زيارات منجزة</div><div class="site-info-val" style="color:var(--ops)">${done} / ${monthF?total:s.agreed_visits}</div></div>
         <div class="site-info-item"><div>المتبقي</div><div class="site-info-val" style="color:${remaining===0?'var(--ops)':'var(--qual)'}">${remaining} زيارة</div></div>
       </div>
       <div class="site-card-bot">
