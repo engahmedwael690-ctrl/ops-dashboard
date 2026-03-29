@@ -708,7 +708,10 @@ function taskHTML(t,chkCls){
   const isLocked=!isAdmin&&t.is_admin_assigned;
   const canEdit=isAdmin||(t.created_by===currentUser?.id&&!t.is_admin_assigned);
   return `<div class="ti ${isOv(t)?'ov':''} ${t.completed?'done':''} ${isLocked?'locked':''}">
-    <div class="chk ${chkCls} ${t.completed?'on':''}" onclick="toggleTask('${t.id}')">${t.completed?'✓':''}</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="chk ${chkCls} ${t.completed?'on':''}" onclick="toggleTask('${t.id}')">${t.completed?'✓':''}</div>
+      ${t.completed?`<button onclick="event.stopPropagation();toggleTask('${t.id}')" title="تراجع عن الإنجاز" style="border:none;background:rgba(255,255,255,.12);color:var(--muted);border-radius:5px;padding:2px 7px;font-size:.62rem;cursor:pointer;font-family:Cairo,sans-serif;line-height:1.4">↩ تراجع</button>`:''}
+    </div>
     <div class="tbody">
       <div class="tname">${t.name}${t.reminder_minutes>0?' <span style="font-size:.55rem;color:#a78bfa">🔔</span>':''}</div>
       <div class="tmeta">
@@ -727,9 +730,9 @@ function taskHTML(t,chkCls){
 }
 
 function sortTasks(list){
-  // المنجزة تنزل تحت — وغير المنجزة مرتبة بالأقدم أولاً (created_at ascending)
-  const pending=list.filter(t=>!t.completed).sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||''));
-  const done=list.filter(t=>t.completed).sort((a,b)=>(a.completed_at||'').localeCompare(b.completed_at||''));
+  // الأحدث إضافةً أولاً — والمنجزة تنزل تحت
+  const pending=list.filter(t=>!t.completed).sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
+  const done=list.filter(t=>t.completed).sort((a,b)=>(b.completed_at||'').localeCompare(a.completed_at||''));
   return [...pending,...done];
 }
 
