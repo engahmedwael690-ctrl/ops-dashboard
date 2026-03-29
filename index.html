@@ -726,10 +726,17 @@ function taskHTML(t,chkCls){
   </div>`;
 }
 
+function sortTasks(list){
+  // المنجزة تنزل تحت — وغير المنجزة مرتبة بالأقدم أولاً (created_at ascending)
+  const pending=list.filter(t=>!t.completed).sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||''));
+  const done=list.filter(t=>t.completed).sort((a,b)=>(a.completed_at||'').localeCompare(b.completed_at||''));
+  return [...pending,...done];
+}
+
 function render(){
-  const oSite=tasks.filter(t=>t.section==='ops'&&t.subtype==='site');
-  const oOther=tasks.filter(t=>t.section==='ops'&&t.subtype==='other');
-  const qual=tasks.filter(t=>t.section==='qual');
+  const oSite=sortTasks(tasks.filter(t=>t.section==='ops'&&t.subtype==='site'));
+  const oOther=sortTasks(tasks.filter(t=>t.section==='ops'&&t.subtype==='other'));
+  const qual=sortTasks(tasks.filter(t=>t.section==='qual'));
   document.getElementById('siteList').innerHTML=oSite.length?oSite.map(t=>taskHTML(t,'chk-o')).join(''):empt('لا توجد مواقع');
   document.getElementById('opsList').innerHTML=oOther.length?oOther.map(t=>taskHTML(t,'chk-o')).join(''):empt('لا توجد مهام');
   document.getElementById('qualList').innerHTML=qual.length?qual.map(t=>taskHTML(t,'chk-q')).join(''):empt('لا توجد مهام');
